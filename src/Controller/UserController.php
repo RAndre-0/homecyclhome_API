@@ -79,13 +79,14 @@ class UserController extends AbstractController
         return new JsonResponse($json_user, Response::HTTP_CREATED, ["location" => $location], true);
     }
 
-    /* Écrase un utilisateur existant */
-    #[Route('/api/users/{id}', name: 'update_user', methods: ["PUT"])]
-    public function update_user(User $user, EntityManagerInterface $em, SerializerInterface $serializer, UserRepository $userRepository, Request $request): JsonResponse
+    /* Met à jour un utilisateur existant */
+    #[Route('/api/users/{id}', name: 'update_user', methods: ["PUT", "PATCH"])]
+    public function update_user(User $user, EntityManagerInterface $em, SerializerInterface $serializer, UserRepository $userRepository, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
         $user_modifie = $serializer->deserialize($request->getContent(), User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user]);
         $em->persist($user_modifie);
         $em->flush();
+        $cache->invalidateTags(["users_cache"]);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }

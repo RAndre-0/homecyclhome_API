@@ -50,15 +50,27 @@ class AppFixtures extends Fixture
         $types_intervention = [$type_inter1, $type_inter2];
 
         // Création d'un user normal
-        $user = new User();
-        $user->setEmail("user@gmail.com");
-        $user->setRoles(["ROLE_USER"]);
-        $user->setPassword($this->userPasswordHasher->hashPassword($user, "password"));
-        $manager->persist($user);
+        $user1 = new User();
+        $user1->setEmail("user1@gmail.com");
+        $user1->setRoles(["ROLE_USER"]);
+        $user1->setPassword($this->userPasswordHasher->hashPassword($user1, "password"));
+        $manager->persist($user1);
+        $user2 = new User();
+        $user2->setEmail("user2@gmail.com");
+        $user2->setRoles(["ROLE_USER"]);
+        $user2->setPassword($this->userPasswordHasher->hashPassword($user2, "password"));
+        $manager->persist($user2);
+
+        // Création d'un user technicien
+        $user_tech = new User();
+        $user_tech->setEmail("tech@gmail.com");
+        $user_tech->setRoles(["ROLE_TECHNICIEN"]);
+        $user_tech->setPassword($this->userPasswordHasher->hashPassword($user_tech, "password"));
+        $manager->persist($user_tech);
 
         // Création d'un user admin
         $user_admin = new User();
-        $user_admin->setEmail("useradmin@gmail.com");
+        $user_admin->setEmail("admin@gmail.com");
         $user_admin->setRoles(["ROLE_ADMIN"]);
         $user_admin->setPassword($this->userPasswordHasher->hashPassword($user_admin, "password"));
         $manager->persist($user_admin);
