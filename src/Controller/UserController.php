@@ -49,9 +49,9 @@ class UserController extends AbstractController
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
     public function delete_user(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
-        $cache->invalidateTags(["users_cache"]);
         $em->remove($user);
         $em->flush();
+        $cache->invalidateTags(["users_cache"]);
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
