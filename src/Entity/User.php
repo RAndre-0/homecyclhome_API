@@ -57,6 +57,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: CommentaireIntervention::class, mappedBy: 'technicien')]
     private Collection $commentaireInterventions;
 
+    #[ORM\OneToOne(mappedBy: 'technician', cascade: ['persist', 'remove'])]
+    private ?Zone $zone = null;
+
     public function __construct()
     {
         $this->demandes_intervention = new ArrayCollection();
@@ -235,6 +238,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $commentaireIntervention->setTechnicien(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getZone(): ?Zone
+    {
+        return $this->zone;
+    }
+
+    public function setZone(?Zone $zone): static
+    {
+        // unset the owning side of the relation if necessary
+        if ($zone === null && $this->zone !== null) {
+            $this->zone->setTechnician(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($zone !== null && $zone->getTechnician() !== $this) {
+            $zone->setTechnician($this);
+        }
+
+        $this->zone = $zone;
 
         return $this;
     }
