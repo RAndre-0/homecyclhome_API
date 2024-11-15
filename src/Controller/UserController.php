@@ -58,7 +58,7 @@ class UserController extends AbstractController
     /* Créé un nouveau user */
     #[Route('/api/users', name: 'create_user', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function create_user(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator, UserPasswordHasherInterface $passwordHasher): JsonResponse
+    public function create_user(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator, UserPasswordHasherInterface $passwordHasher, TagAwareCacheInterface $cache): JsonResponse
     {
         $user = $serializer->deserialize($request->getContent(), User::class, "json");
 
@@ -74,6 +74,7 @@ class UserController extends AbstractController
 
         $em->persist($user);
         $em->flush();
+        $cache->invalidateTags(["users_cache"]);
         $json_user = $serializer->serialize($user, "json", ["groups" => "get_users"]);
         $location = $urlGenerator->generate("user", ["id" => $user->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         return new JsonResponse($json_user, Response::HTTP_CREATED, ["location" => $location], true);
