@@ -1,0 +1,320 @@
+openapi: 3.0.0
+info:
+  title: API Documentation
+  version: 1.0.0
+  description: Documentation de l'API pour les utilisateurs, zones, interventions, modèles de planning et produits.
+servers:
+  - url: http://localhost/api
+    description: Serveur local
+paths:
+  /users/{role}:
+    get:
+      summary: Liste des utilisateurs
+      parameters:
+        - name: role
+          in: path
+          required: true
+          description: Filtrer les utilisateurs par rôle
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /users/{id}:
+    get:
+      summary: Obtenir un utilisateur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de l'utilisateur
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Détails de l'utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      summary: Supprimer un utilisateur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de l'utilisateur
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Utilisateur supprimé
+  /users:
+    post:
+      summary: Créer un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Utilisateur créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /zones:
+    get:
+      summary: Lister toutes les zones
+      responses:
+        '200':
+          description: Liste des zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Zone'
+    post:
+      summary: Créer une nouvelle zone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Zone'
+      responses:
+        '201':
+          description: Zone créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+  /zones/{id}:
+    get:
+      summary: Obtenir une zone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la zone
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Détails de la zone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+  /interventions:
+    get:
+      summary: Lister toutes les interventions
+      responses:
+        '200':
+          description: Liste des interventions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Intervention'
+    post:
+      summary: Créer une nouvelle intervention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Intervention'
+      responses:
+        '201':
+          description: Intervention créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervention'
+  /modeles-planning:
+    get:
+      summary: Lister tous les modèles de planning
+      responses:
+        '200':
+          description: Liste des modèles de planning
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModelePlanning'
+  /new-interventions/{idModel}:
+    post:
+      summary: Créer des interventions à partir d'un modèle
+      parameters:
+        - name: idModel
+          in: path
+          required: true
+          description: ID du modèle de planning
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                technicians:
+                  type: array
+                  items:
+                    type: integer
+                from:
+                  type: string
+                  format: date
+                to:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Interventions créées avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: string
+  /produits:
+    get:
+      summary: Lister tous les produits
+      responses:
+        '200':
+          description: Liste des produits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Produit'
+    post:
+      summary: Créer un produit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Produit'
+      responses:
+        '201':
+          description: Produit créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Produit'
+  /produits/{id}:
+    get:
+      summary: Obtenir un produit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du produit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Détails du produit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Produit'
+    delete:
+      summary: Supprimer un produit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du produit
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Produit supprimé
+    put:
+      summary: Modifier un produit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du produit
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Produit'
+      responses:
+        '204':
+          description: Produit mis à jour
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+    Zone:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    Intervention:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date-time
+        technician:
+          type: integer
+        client:
+          type: integer
+    ModelePlanning:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+    Produit:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float

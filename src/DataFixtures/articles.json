@@ -1,0 +1,132 @@
+[
+    {
+        "titre": "Casque de cyclisme aérodynamique",
+        "description": "Un casque innovant qui améliore la pénétration dans l'air tout en assurant une protection maximale.",
+        "prix": 79.99
+    },
+    {
+        "titre": "Sacoche de cadre imperméable",
+        "description": "Une sacoche robuste pour ranger vos accessoires et outils en toute sécurité, même sous la pluie.",
+        "prix": 29.99
+    },
+    {
+        "titre": "Gants de vélo anti-chocs",
+        "description": "Des gants rembourrés qui absorbent les vibrations et réduisent la fatigue des mains lors de longues sorties.",
+        "prix": 19.99
+    },
+    {
+        "titre": "Lumière LED rechargeable",
+        "description": "Un phare puissant pour assurer une visibilité optimale de nuit et par mauvais temps.",
+        "prix": 39.99
+    },
+    {
+        "titre": "Porte-bidon en fibre de carbone",
+        "description": "Un porte-bidon ultra-léger conçu pour maintenir solidement votre gourde même sur terrains accidentés.",
+        "prix": 14.99
+    },
+    {
+        "titre": "Pneus anti-crevaison",
+        "description": "Des pneus renforcés qui réduisent les risques de crevaison, idéaux pour les longues randonnées.",
+        "prix": 49.99
+    },
+    {
+        "titre": "Compteur GPS avec capteur de cadence",
+        "description": "Un ordinateur de bord précis pour suivre votre vitesse, votre cadence et votre itinéraire.",
+        "prix": 199.99
+    },
+    {
+        "titre": "Chaussures de vélo avec semelle carbone",
+        "description": "Des chaussures légères qui optimisent la transmission de puissance à chaque coup de pédale.",
+        "prix": 119.99
+    },
+    {
+        "titre": "Short de cyclisme rembourré",
+        "description": "Un cuissard confortable avec un rembourrage en gel pour des sorties longues sans douleur.",
+        "prix": 49.99
+    },
+    {
+        "titre": "Maillot de vélo respirant",
+        "description": "Un maillot léger et évacuant l'humidité pour rester au sec même sous forte chaleur.",
+        "prix": 39.99
+    },
+    {
+        "titre": "Pédales automatiques",
+        "description": "Des pédales avec système d'attache rapide pour un meilleur rendement et plus de sécurité.",
+        "prix": 89.99
+    },
+    {
+        "titre": "Dérailleur électronique",
+        "description": "Un système de transmission électrique ultra-précis pour des changements de vitesse fluides.",
+        "prix": 249.99
+    },
+    {
+        "titre": "Bidon isotherme",
+        "description": "Une gourde qui garde votre boisson fraîche pendant plusieurs heures, même en plein soleil.",
+        "prix": 12.99
+    },
+    {
+        "titre": "Antivol en U renforcé",
+        "description": "Un cadenas haute sécurité pour protéger votre vélo des vols.",
+        "prix": 59.99
+    },
+    {
+        "titre": "Selle ergonomique",
+        "description": "Une selle conçue pour réduire la pression et maximiser le confort sur longues distances.",
+        "prix": 79.99
+    },
+    {
+        "titre": "Tapis d'entraînement pour home-trainer",
+        "description": "Un tapis antidérapant pour réduire le bruit et protéger votre sol lors des séances en intérieur.",
+        "prix": 34.99
+    },
+    {
+        "titre": "Gilet réfléchissant",
+        "description": "Un gilet haute visibilité pour rouler en toute sécurité de nuit ou par faible luminosité.",
+        "prix": 24.99
+    },
+    {
+        "titre": "Support de réparation pliable",
+        "description": "Un pied d’atelier robuste pour entretenir et réparer facilement votre vélo.",
+        "prix": 129.99
+    },
+    {
+        "titre": "Paire de lunettes photochromiques",
+        "description": "Des lunettes qui s'adaptent automatiquement aux changements de luminosité.",
+        "prix": 49.99
+    },
+    {
+        "titre": "Spray lubrifiant chaîne",
+        "description": "Un lubrifiant longue durée pour maintenir votre transmission fluide et silencieuse.",
+        "prix": 9.99
+    },
+    {
+        "titre": "Guidoline en gel",
+        "description": "Un ruban de guidon absorbant les vibrations pour un confort maximal sur route.",
+        "prix": 19.99
+    },
+    {
+        "titre": "Garde-boue ajustable",
+        "description": "Un garde-boue amovible qui protège efficacement contre les éclaboussures et la boue.",
+        "prix": 22.99
+    },
+    {
+        "titre": "Support mural pour vélo",
+        "description": "Un support robuste pour ranger votre vélo sans encombrer votre espace.",
+        "prix": 34.99
+    },
+    {
+        "titre": "Freins à disque hydrauliques",
+        "description": "Un système de freinage puissant pour un contrôle optimal en toutes conditions.",
+        "prix": 179.99
+    },
+    {
+        "titre": "Kit de réparation tubeless",
+        "description": "Un kit pratique pour réparer une crevaison sans chambre à air en quelques minutes.",
+        "prix": 29.99
+    },
+    {
+        "titre": "Mini-pompe haute pression",
+        "description": "Une pompe compacte mais puissante pour gonfler vos pneus en cas de besoin.",
+        "prix": 24.99
+    }
+]
