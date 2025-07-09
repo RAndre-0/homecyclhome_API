@@ -1,6 +1,12 @@
-raphael-andre.fr {
-  root * /app/public
-  php_fastcgi 127.0.0.1:9000
-  encode zstd gzip
-  file_server
+{
+    auto_https disable_redirects
+    http_port 80
+    https_port 443
+}
+
+https://:443 {
+    root * /app/public
+    php_autoindex
+    encode zstd gzip
+    file_server
 }
