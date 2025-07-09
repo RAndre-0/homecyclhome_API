@@ -1,0 +1,67 @@
+name: CI - Symfony HomeCyclHome API
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: 🔧 Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17.5-bookworm
+        env:
+          POSTGRES_DB: symfony
+          POSTGRES_USER: symfony
+          POSTGRES_PASSWORD: symfony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
+      APP_ENV: test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up PHP with extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, pdo_pgsql, zip
+          tools: composer
+          coverage: xdebug
+
+      - name: 📦 Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: ⚙️ Prepare database
+        run: |
+          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:migrations:migrate --no-interaction
+        env:
+          DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
+
+      - name: 🧪 Run PHPUnit tests
+        run: |
+          php bin/phpunit --testdox --colors=always
+        env:
+          DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
+
+      - name: 📊 Upload code coverage (optionnel)
+        if: always()
+        run: |
+          mkdir -p coverage
+          php bin/phpunit --coverage-html coverage
+        env:
+          DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
