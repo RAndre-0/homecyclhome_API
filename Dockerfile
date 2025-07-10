@@ -16,4 +16,3 @@ COPY --from=vendor /app/vendor ./vendor
 COPY . .
 
 EXPOSE 80 443 443/udp
-HEALTHCHECK CMD curl --fail https://localhost/ || exit 1
