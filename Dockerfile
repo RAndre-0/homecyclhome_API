@@ -16,3 +16,9 @@ COPY --from=vendor /app/vendor ./vendor
 COPY . .
 
 EXPOSE 80 443 443/udp
+
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+
+RUN php bin/console cache:clear --env=prod --no-warmup && php bin/console cache:warmup --env=prod
+

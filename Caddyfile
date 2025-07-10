@@ -1,12 +1,6 @@
-{
-    auto_https disable_redirects
-    http_port 80
-    https_port 443
-}
-
-https://:443 {
+api.homecyclhome.site {
     root * /app/public
-    php_autoindex
+    php_fastcgi unix//var/run/php/php.sock
     encode zstd gzip
     file_server
 }
