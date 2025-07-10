@@ -1,6 +1,22 @@
 api.homecyclhome.site {
     root * /app/public
-    php_fastcgi unix//var/run/php/php.sock
     encode zstd gzip
-    file_server
+    php_server
+    
+    # Gestion des erreurs
+    handle_errors {
+        @404 {
+            expression {http.error.status_code} == 404
+        }
+        rewrite @404 /index.php
+        php_server
+    }
+    
+    # Headers de sécurité
+    header {
+        X-Frame-Options DENY
+        X-Content-Type-Options nosniff
+        X-XSS-Protection "1; mode=block"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
 }
