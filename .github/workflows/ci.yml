@@ -15,7 +15,7 @@ jobs:
       postgres:
         image: postgres:17.5-bookworm
         env:
-          POSTGRES_DB: symfony
+          POSTGRES_DB: symfony_test
           POSTGRES_USER: symfony
           POSTGRES_PASSWORD: symfony
         ports:
@@ -27,12 +27,21 @@ jobs:
           --health-retries=5
 
     env:
-      DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
       APP_ENV: test
+      DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony_test"
+      JWT_PASSPHRASE: 15beed40ff99cd3c5e99fabed0c3592093ed4169015b5c9933977878e62152f5
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+
+      - name: 📝 Create .env file manually
+        run: |
+          echo "APP_ENV=test" > .env
+          echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony_test" >> .env
+          echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env
+          echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env
+          echo "JWT_PASSPHRASE=${{ env.JWT_PASSPHRASE }}" >> .env
 
       - name: ⚙️ Set up PHP with extensions
         uses: shivammathur/setup-php@v2
@@ -45,23 +54,21 @@ jobs:
       - name: 📦 Install Composer dependencies
         run: composer install --prefer-dist --no-interaction
 
+      - name: 🔐 Generate JWT keys
+        run: php bin/console lexik:jwt:generate-keypair
+        env:
+          JWT_PASSPHRASE: ${{ env.JWT_PASSPHRASE }}
+
       - name: ⚙️ Prepare database
         run: |
-          php bin/console doctrine:database:create --if-not-exists
-          php bin/console doctrine:migrations:migrate --no-interaction
-        env:
-          DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
       - name: 🧪 Run PHPUnit tests
-        run: |
-          php bin/phpunit --testdox --colors=always
-        env:
-          DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"
+        run: php bin/phpunit --testdox --colors=always
 
-      - name: 📊 Upload code coverage (optionnel)
+      - name: 📊 Upload code coverage
         if: always()
         run: |
           mkdir -p coverage
           php bin/phpunit --coverage-html coverage
-        env:
-          DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony"

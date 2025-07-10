@@ -15,12 +15,12 @@ class ApiTestCase extends WebTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->client = static::createClient(); // Boot ici, une seule fois
+        $this->client = static::createClient();
     }
 
     protected function loadFixtures(): void
     {
-        $container = static::getContainer(); // Pas besoin de bootKernel()
+        $container = static::getContainer();
         $em = $container->get(EntityManagerInterface::class);
 
         $purger = new ORMPurger($em);
