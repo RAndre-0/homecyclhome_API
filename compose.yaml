@@ -43,7 +43,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: andre.raphael@ik.me
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "5050:80"
+      - "${PGADMIN_PORT:-5050:80}"
     depends_on:
       - db
     networks:
