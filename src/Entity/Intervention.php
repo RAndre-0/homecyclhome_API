@@ -47,6 +47,10 @@ class Intervention
     #[Groups(["get_interventions", "get_intervention"])]
     private ?string $photo = null;
 
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    #[Groups(["get_interventions", "get_intervention"])]
+    private bool $finalisee = false;
+
     /**
      * @var Collection<int, InterventionProduit>
      */
@@ -167,6 +171,17 @@ class Intervention
     public function setPhoto(?string $photo): static
     {
         $this->photo = $photo;
+        return $this;
+    }
+
+    public function isFinalisee(): bool
+    {
+        return $this->finalisee;
+    }
+
+    public function setFinalisee(bool $finalisee): static
+    {
+        $this->finalisee = $finalisee;
         return $this;
     }
 

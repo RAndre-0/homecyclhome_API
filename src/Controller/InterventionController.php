@@ -218,6 +218,41 @@ class InterventionController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
+    // Permet aux techniciens et aux administrateurs de valider une intervention
+    #[Route('/api/interventions/{id}/validate', name: 'validate_intervention', methods: ['POST'])]
+    #[IsGranted("ROLE_TECHNICIEN")]
+    public function validerIntervention(
+        int $id,
+        InterventionRepository $interventionRepository,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        $intervention = $interventionRepository->find($id);
+
+        if (!$intervention) {
+            return new JsonResponse(['error' => 'Intervention non trouvée.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $user = $this->getUser();
+
+        // Seul le technicien associé ou un admin peut valider
+        if (
+            !$this->isGranted('ROLE_ADMIN') &&
+            ($intervention->getTechnicien()?->getId() !== $user?->getId())
+        ) {
+            return new JsonResponse(['error' => 'Accès interdit.'], Response::HTTP_FORBIDDEN);
+        }
+
+        try {
+            $intervention->setFinalisee(true);
+            $entityManager->persist($intervention);
+            $entityManager->flush();
+
+            return new JsonResponse(['message' => 'Intervention marquée comme finalisée.'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => 'Une erreur est survenue lors de la validation de l’intervention.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     /* Supprime les interventions dans une plage de dates pour les techniciens listés */
     #[Route('/api/interventions/delete', name: 'delete_interventions', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
@@ -273,7 +308,7 @@ class InterventionController extends AbstractController
         // Sauvegarde des modifications
         $entityManager->flush();
 
-        return new JsonResponse(['success' => 'Interventions supprimées avec succès.'], 200);
+        return new JsonResponse(['message' => 'Interventions supprimées avec succès.'], 200);
     }
 
 
@@ -353,7 +388,7 @@ class InterventionController extends AbstractController
         $entityManager->flush();
 
         // Retour d’une réponse JSON indiquant le succès de l’opération
-        return new JsonResponse(['success' => 'Interventions créées avec succès.'], 201);
+        return new JsonResponse(['message' => 'Interventions créées avec succès.'], 201);
     }
 
 
