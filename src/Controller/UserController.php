@@ -64,7 +64,7 @@ class UserController extends AbstractController
 
     /* Retourne un utilisateur */
     #[Route('/api/users/{id<\d+>}', name: 'user', methods: ["GET"])]
-    public function get_user(User $user, UserRepository $userRepository, SerializerInterface $serializer): JsonResponse
+    public function getOneUser(User $user, UserRepository $userRepository, SerializerInterface $serializer): JsonResponse
     {
         $userJson = $serializer->serialize($user, 'json', ["groups" => "get_user"]);
         return new JsonResponse($userJson, Response::HTTP_OK, [], true);
@@ -85,7 +85,7 @@ class UserController extends AbstractController
     /* Supprime un utilisateur */
     #[Route('/api/users/{id}', name: 'delete_user', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function delete_user(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
+    public function deleteUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $em->remove($user);
         $em->flush();
@@ -96,7 +96,7 @@ class UserController extends AbstractController
     /* Créé un nouveau user */
     #[Route('/api/users', name: 'create_user', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function create_user(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator, UserPasswordHasherInterface $passwordHasher, TagAwareCacheInterface $cache): JsonResponse
+    public function createUser(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator, UserPasswordHasherInterface $passwordHasher, TagAwareCacheInterface $cache): JsonResponse
     {
         $user = $serializer->deserialize($request->getContent(), User::class, "json");
 
@@ -120,7 +120,7 @@ class UserController extends AbstractController
 
     /* Met à jour un utilisateur existant */
     #[Route('/api/users/{id}', name: 'update_user', methods: ["PUT", "PATCH"])]
-    public function update_user(User $user, EntityManagerInterface $em, SerializerInterface $serializer, UserRepository $userRepository, Request $request, TagAwareCacheInterface $cache): JsonResponse
+    public function updateUser(User $user, EntityManagerInterface $em, SerializerInterface $serializer, UserRepository $userRepository, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
         $userModifie = $serializer->deserialize($request->getContent(), User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user]);
         $em->persist($userModifie);

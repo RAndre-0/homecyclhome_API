@@ -22,7 +22,7 @@ class ProduitController extends AbstractController
 {
     /* Renvoie tous les produits */
     #[Route('/api/produits', name: 'produits', methods: ["GET"])]
-    public function get_produits(ProduitRepository $produitRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    public function getProduits(ProduitRepository $produitRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         $idCache = "get_produits";
 
@@ -37,7 +37,7 @@ class ProduitController extends AbstractController
 
     /* Retourne un produit */
     #[Route('/api/produits/{id}', name: 'produit', methods: ["GET"])]
-    public function get_produit(Produit $produit, ProduitRepository $produitRepository, SerializerInterface $serializer): JsonResponse
+    public function getProduit(Produit $produit, ProduitRepository $produitRepository, SerializerInterface $serializer): JsonResponse
     {
         $produitjson = $serializer->serialize($produit, 'json', ["groups" => "get_produit"]);
         return new JsonResponse($produitjson, Response::HTTP_OK, [], true);
@@ -46,7 +46,7 @@ class ProduitController extends AbstractController
     /* Supprime un produit */
     #[Route('/api/produits/{id}', name: 'delete_produit', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function delete_produit(Produit $produit, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
+    public function deleteProduit(Produit $produit, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $cache->invalidateTags(["produits_cache"]);
         $em->remove($produit);
@@ -57,7 +57,7 @@ class ProduitController extends AbstractController
     /* Créé un nouveau produit */
     #[Route('/api/produits', name: 'create_produit', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function create_produit(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
+    public function createProduit(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
         $produit = $serializer->deserialize($request->getContent(), Produit::class, "json");
 
@@ -75,7 +75,7 @@ class ProduitController extends AbstractController
 
     /* Écrase un produit existant */
     #[Route('/api/produits/{id}', name: 'update_produit', methods: ["PUT", "PATCH"])]
-    public function update_produit(Produit $produit, EntityManagerInterface $em, SerializerInterface $serializer, ProduitRepository $produitRepository, Request $request): JsonResponse
+    public function updateProduit(Produit $produit, EntityManagerInterface $em, SerializerInterface $serializer, ProduitRepository $produitRepository, Request $request): JsonResponse
     {
         $produitModifie = $serializer->deserialize($request->getContent(), Produit::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $produit]);
         $em->persist($produitModifie);

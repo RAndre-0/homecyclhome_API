@@ -17,25 +17,37 @@ class InterventionRepository extends ServiceEntityRepository
     }
 
     /**
-     * Retourne les interventions d'un technicien, avec option de filtrage
-     * 
-     * @param int $technicienId
-     * @param bool|null $reservedOnly Si true, retourne uniquement les interventions réservées
-     *                                Si false ou null, retourne toutes les interventions
-     * @return Intervention[]
+     * Retourne les interventions d’un technicien, avec des options de filtrage.
+     *
+     * @param int $technicienId ID du technicien concerné.
+     * @param bool|null $reservedOnly Si true, retourne uniquement les interventions réservées (ayant un client).
+     *                                Si false ou null, retourne toutes les interventions.
+     * @param \DateTimeInterface|null $date Si spécifiée, filtre les interventions dont la date de début est le jour donné (entre 00:00 et 23:59:59).
+     *
+     * @return Intervention[] Liste des interventions correspondant aux critères.
      */
-    public function findByTechnicienWithFilter(int $technicienId, ?bool $reservedOnly): array
+    public function findByTechnicienWithFilter(int $technicienId, ?bool $reservedOnly = false, ?\DateTimeInterface $date = null): array
     {
         $qb = $this->createQueryBuilder('i')
             ->where('i.technicien = :technicienId')
-            ->setParameter('technicienId', $technicienId);
+            ->setParameter('technicienId', $technicienId)
+            ->orderBy('i.debut', 'ASC');
 
         if ($reservedOnly === true) {
             $qb->andWhere('i.client IS NOT NULL');
         }
 
+        if ($date) {
+            $start = (clone $date)->setTime(0, 0, 0);
+            $end = (clone $date)->setTime(23, 59, 59);
+            $qb->andWhere('i.debut BETWEEN :start AND :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end);
+        }
+
         return $qb->getQuery()->getResult();
     }
+
 
     public function findNonReservedInterventionsByTechnicianAndDateRange(
         \App\Entity\User $technician,

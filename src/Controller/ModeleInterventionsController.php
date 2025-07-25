@@ -23,7 +23,7 @@ class ModeleInterventionsController extends AbstractController
 {
     /* Renvoie les relations modèle interventions */
     #[Route('/api/modele-interventions', name: 'get_modele_interventions', methods: ["GET"])]
-    public function get_modele_interventions(ModeleInterventionsRepository $modeleInterventionsRepository, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
+    public function getModeleInterventions(ModeleInterventionsRepository $modeleInterventionsRepository, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
     {
         try {
             $idCache = "modele_interventions_cache";
@@ -42,7 +42,7 @@ class ModeleInterventionsController extends AbstractController
 
     /* Retourne un type d'intervention du modèle */
     #[Route('/api/modele-interventions/{id}', name: "get_modele_intervention", methods: ["GET"])]
-    public function get_modele_intervention(ModeleInterventions $modeleInterventions, SerializerInterface $serializer): JsonResponse
+    public function getModeleIntervention(ModeleInterventions $modeleInterventions, SerializerInterface $serializer): JsonResponse
     {
         if (!$modeleInterventions) {
             return new JsonResponse(["message" => "Intervention de modèle non trouvée"], Response::HTTP_NOT_FOUND);
@@ -58,7 +58,7 @@ class ModeleInterventionsController extends AbstractController
     /* Supprime une intervention du modèle */
     #[Route('/api/modele-interventions/{id}', name: "delete_modele_intervention", methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function delete_modele_intervention(ModeleInterventions $modeleInterventions, TagAwareCacheInterface $cache, EntityManagerInterface $em): JsonResponse
+    public function deleteModeleIntervention(ModeleInterventions $modeleInterventions, TagAwareCacheInterface $cache, EntityManagerInterface $em): JsonResponse
     {
         if (!$modeleInterventions) {
             return new JsonResponse(["message" => "Intervention de modèle non trouvée"], Response::HTTP_NOT_FOUND);
@@ -77,7 +77,7 @@ class ModeleInterventionsController extends AbstractController
     /* Créé une intervention dans le modèle */
     #[Route("/api/modele-interventions", name: "create_modele_intervention", methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function create_modele_intervention(
+    public function createModeleIntervention(
         SerializerInterface $serializer,
         EntityManagerInterface $em,
         UrlGeneratorInterface $urlGenerator,

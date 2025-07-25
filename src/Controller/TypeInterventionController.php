@@ -23,7 +23,7 @@ class TypeInterventionController extends AbstractController
 {
     /* Retourne la liste des types d'intervention' */
     #[Route('/api/types-intervention', name: 'get_types_intervention', methods: ["GET"])]
-    public function get_types_intervention(TypeInterventionRepository $typeInterventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    public function getTypesIntervention(TypeInterventionRepository $typeInterventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
             $idCache = "types_inter_cache";
@@ -41,7 +41,7 @@ class TypeInterventionController extends AbstractController
 
     /* Retourne un type d'intervention */
     #[Route('/api/types-intervention/{id}', name: 'get_type_intervention', methods: ["GET"])]
-    public function get_type_intervention(TypeIntervention $typeIntervention, SerializerInterface $serializer): JsonResponse
+    public function getTypeIntervention(TypeIntervention $typeIntervention, SerializerInterface $serializer): JsonResponse
     {
         if (!$typeIntervention) {
             return new JsonResponse(["message" => "Type d'intervention non trouvé"], Response::HTTP_NOT_FOUND);
@@ -57,7 +57,7 @@ class TypeInterventionController extends AbstractController
     /* Nouveau type d'intervention */
     #[Route('/api/types-intervention', name: 'create_type_intervention', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function create_type_intervention(
+    public function createTypeIntervention(
         SerializerInterface $serializer,
         EntityManagerInterface $em,
         UrlGeneratorInterface $urlGenerator,
@@ -89,7 +89,7 @@ class TypeInterventionController extends AbstractController
     /* Modifie un type d'intervention */
     #[Route("api/types-intervention/{id}", name: "update_type_intervention", methods: ["PATCH", "PUT"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function update_type_intervention(
+    public function updateTypeIntervention(
         TypeIntervention $typeIntervention, 
         SerializerInterface $serializer, 
         Request $request,
@@ -119,7 +119,7 @@ class TypeInterventionController extends AbstractController
     /* Supprime un type d'intervention et les interventions qui lui sont liées */
     #[Route('/api/types-intervention/{id}', name: 'delete_type_intervention', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function delete_type_intervention(EntityManagerInterface $em, TypeIntervention $typeIntervention, TagAwareCacheInterface $cache): JsonResponse 
+    public function deleteTypeIntervention(EntityManagerInterface $em, TypeIntervention $typeIntervention, TagAwareCacheInterface $cache): JsonResponse 
     {
         $interventions = $typeIntervention->getInterventions();
         foreach ($interventions as $intervention) {

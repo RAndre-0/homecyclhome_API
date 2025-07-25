@@ -23,7 +23,7 @@ final class ZoneController extends AbstractController
 {
     /* Renvoie toutes les zones */
     #[Route("/api/zones", name: "get_zones", methods: ["GET"])]
-    public function get_zones(ZoneRepository $zoneRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    public function getZones(ZoneRepository $zoneRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         $cache->invalidateTags(["zones_cache"]);
         $id_cache = "get_zones";
@@ -39,7 +39,7 @@ final class ZoneController extends AbstractController
 
     /* Créé une nouvelle zone */
     #[Route("/api/zones", name: "create_zone", methods: ["POST"])]
-    public function new_zone(
+    public function newZone(
         ZoneRepository $zoneRepository,
         Request $request,
         EntityManagerInterface $em,
@@ -88,7 +88,7 @@ final class ZoneController extends AbstractController
 
     /* Retourne une zone */
     #[Route("/api/zones/{id}", name: "get_zone", methods: ["GET"])]
-    public function show_zone(Zone $zone = null, SerializerInterface $serializer): JsonResponse
+    public function showZone(Zone $zone = null, SerializerInterface $serializer): JsonResponse
     {
         if (!$zone) {
             return new JsonResponse(["error" => "Zone non trouvée"], Response::HTTP_NOT_FOUND);
@@ -98,7 +98,7 @@ final class ZoneController extends AbstractController
 
     /* Modifie une zone */
     #[Route("/api/zones/{id}/edit", name: "update_zone", methods: ["PUT", "PATCH"])]
-    public function edit_zone(
+    public function editZone(
         Request $request,
         Zone $zone = null,
         EntityManagerInterface $em,
@@ -161,7 +161,7 @@ final class ZoneController extends AbstractController
     /* Supprime une zone */
     #[Route('/api/zones/{id}', name: 'delete_zone', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function delete_zone(Zone $zone = null, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
+    public function deleteZone(Zone $zone = null, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         if (!$zone) {
             return new JsonResponse(["error" => "Zone non trouvée"], Response::HTTP_NOT_FOUND);

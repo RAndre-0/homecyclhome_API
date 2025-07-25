@@ -36,7 +36,7 @@ class InterventionController extends AbstractController
 {
     /* Renvoie tous les interventions */
     #[Route('/api/interventions', name: 'get_interventions', methods: ["GET"])]
-    public function get_interventions(InterventionRepository $interventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    public function getInterventions(InterventionRepository $interventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
             $idCache = "interventions_cache";
@@ -54,25 +54,62 @@ class InterventionController extends AbstractController
 
     /* Renvoie les interventions d'un technicien */
     #[Route('/api/interventions/technicien/{id}', name: 'get_interventions_technicien', methods: ["GET"])]
-    public function get_interventions_by_technicien(
+    public function getInterventionsByTechnicien(
         int $id,
         Request $request,
         InterventionRepository $interventionRepository,
         SerializerInterface $serializer
     ): JsonResponse 
     {
-        // Récupération du paramètre reservedOnly avec validation, false par défaut
+        // Récupérer les interventions réservées uniquement ou non
         $reservedOnly = filter_var($request->query->get('reservedOnly', false), FILTER_VALIDATE_BOOLEAN);
 
-        $interventions = $interventionRepository->findByTechnicienWithFilter($id, $reservedOnly);
+        // Récupérer les interventions d'un jour spécifique si fourni
+        $dateParam = $request->query->get('date');
+        $date = null;
+        if ($dateParam) {
+            $date = \DateTime::createFromFormat('Y-m-d', $dateParam);
+            if (!$date) {
+                return new JsonResponse(['error' => 'Format de date invalide. Utilisez YYYY-MM-DD.'], JsonResponse::HTTP_BAD_REQUEST);
+            }
+        }
+
+        $interventions = $interventionRepository->findByTechnicienWithFilter($id, $reservedOnly, $date);
 
         $interventionsJson = $serializer->serialize($interventions, 'json', ['groups' => 'get_interventions']);
         return new JsonResponse($interventionsJson, Response::HTTP_OK, [], true);
     }
 
+    // Renvoie les interventions d'un technicien authentifié
+    #[Route('/api/interventions/technicien', name: 'get_my_interventions', methods: ['GET'])]
+    #[IsGranted("ROLE_TECHNICIEN")]
+    public function getMyInterventions(
+        Request $request,
+        InterventionRepository $interventionRepository,
+        SerializerInterface $serializer
+    ): JsonResponse {
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Utilisateur non authentifié'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $dateParam = $request->query->get('date');
+        $date = $dateParam ? \DateTime::createFromFormat('Y-m-d', $dateParam) : null;
+
+        if ($dateParam && !$date) {
+            return new JsonResponse(['error' => 'Format de date invalide (attendu : Y-m-d)'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $interventions = $interventionRepository->findByTechnicienWithFilter($user->getId(), true, $date);
+
+        $json = $serializer->serialize($interventions, 'json', ['groups' => 'get_interventions']);
+        return new JsonResponse($json, JsonResponse::HTTP_OK, [], true);
+    }
+
     /* Renvoie les interventions d'un client */
     #[Route('/api/interventions/client/{id}', name: 'get_interventions_client', methods: ["GET"])]
-    public function get_interventions_by_client(
+    public function getInterventionsByClient(
         int $id,
         InterventionRepository $interventionRepository,
         SerializerInterface $serializer
@@ -90,7 +127,7 @@ class InterventionController extends AbstractController
 
     /* Renvoie les interventions d'un client authentifié */
     #[Route('/api/interventions/client', name: 'get_interventions_authenticated_client', methods: ["GET"])]
-    public function get_interventions_authenticated_client(
+    public function getInterventionsAuthenticatedClient(
         Security $security,
         InterventionRepository $interventionRepository,
         SerializerInterface $serializer
@@ -109,6 +146,7 @@ class InterventionController extends AbstractController
 
     /* Renvoie le nombre d'interventions par type et par mois pour les 12 derniers mois */
     #[Route('/api/interventions/stats', name: 'get_interventions_stats', methods: ['GET'])]
+    #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
     public function interventionsStats(InterventionRepository $interventionRepository): JsonResponse
     {
         try {
@@ -128,7 +166,7 @@ class InterventionController extends AbstractController
 
     /* Renvoie les prochaines interventions */
     #[Route('/api/interventions/next-interventions', name: 'get_next_interventions', methods: ["GET"])]
-    public function get_next_interventions(InterventionRepository $interventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    public function getNextInterventions(InterventionRepository $interventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
             // Récupére les prochaines interventions
@@ -144,7 +182,7 @@ class InterventionController extends AbstractController
 
     /* Retourne une intervention */
     #[Route('/api/interventions/{id}', name: 'get_intervention', methods: ["GET"])]
-    public function get_intervention(Intervention $intervention, SerializerInterface $serializer): JsonResponse
+    public function getIntervention(Intervention $intervention, SerializerInterface $serializer): JsonResponse
     {
         $interventionJson = $serializer->serialize($intervention, "json", ["groups" => "get_intervention"]);
         return new JsonResponse($interventionJson, Response::HTTP_OK, [], true);
@@ -152,7 +190,7 @@ class InterventionController extends AbstractController
 
     /* Créé une nouvelle intervention */
     #[Route("/api/interventions", name: "create_intervention", methods: ["POST"])]
-    public function new_intervention(
+    public function newIntervention(
         Request $request,
         EntityManagerInterface $em,
         SerializerInterface $serializer,
@@ -208,7 +246,7 @@ class InterventionController extends AbstractController
 
     /* Modifie une intervention */
     #[Route("/api/interventions/{id}/edit", name: "update_intervention", methods: ["PUT", "PATCH"])]
-    public function edit_intervention(Request $request, Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
+    public function editIntervention(Request $request, Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
     {
         $interventionModifiee = $serializer->deserialize($request->getContent(), Intervention::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $intervention]);
         $em->persist($interventionModifiee);
@@ -315,7 +353,7 @@ class InterventionController extends AbstractController
     /* Supprime une intervention */
     #[Route('/api/interventions/{id}', name: 'delete_intervention', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
-    public function delete_user(Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
+    public function deleteIntervention(Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $produits = $intervention->getInterventionProduit();
         foreach ($produits as $produit) {
