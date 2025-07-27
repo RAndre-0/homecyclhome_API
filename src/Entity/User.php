@@ -72,7 +72,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $lastName = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    #[Groups(["get_users", "get_user"])]
+    #[Groups(["get_users", "get_user", "get_intervention"])]
     #[Assert\Regex(
         pattern: "/^\+?[0-9\s\-()]{7,20}$/",
         message: "Le numéro de téléphone n'est pas valide."
