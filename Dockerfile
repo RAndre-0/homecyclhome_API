@@ -1,34 +1,39 @@
-FROM composer:2 AS vendor
+FROM php:8.3-fpm
 
-WORKDIR /app
-COPY composer.json composer.lock symfony.lock ./
-RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-scripts
+# Dépendances système
+RUN apt-get update && apt-get install -y \
+    libicu-dev libzip-dev unzip git libpq-dev postgresql-client \
+  && docker-php-ext-install intl zip pdo_pgsql opcache \
+  && rm -rf /var/lib/apt/lists/*
 
-FROM dunglas/frankenphp
+# Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN install-php-extensions \
-    intl \
-    zip \
-    pdo_pgsql \
-    opcache
+WORKDIR /var/www/html
 
-WORKDIR /app
-
-# Copier les vendors d'abord
-COPY --from=vendor /app/vendor ./vendor
-
-# Copier le reste du code
+# Copier l'app
 COPY . .
 
-# Créer le cache et logs directories avec les bonnes permissions
-RUN mkdir -p var/cache var/log && \
-    chown -R www-data:www-data var/
+# Dépendances PHP (prod)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
-# Optimisations pour la production
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
-ENV PHP_OPCACHE_ENABLE=1
-ENV PHP_OPCACHE_MEMORY_CONSUMPTION=256
-ENV PHP_OPCACHE_MAX_ACCELERATED_FILES=20000
+# Opcache (prod)
+RUN { \
+  echo 'opcache.enable=1'; \
+  echo 'opcache.memory_consumption=256'; \
+  echo 'opcache.max_accelerated_files=20000'; \
+  echo 'opcache.validate_timestamps=0'; \
+  echo 'opcache.preload=/var/www/html/config/preload.php'; \
+  echo 'opcache.preload_user=www-data'; \
+} > /usr/local/etc/php/conf.d/opcache.ini
 
-EXPOSE 80 443 443/udp
+# Dossiers & droits
+RUN mkdir -p var/cache var/log public/uploads \
+ && chown -R www-data:www-data var public/uploads
+
+# Entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]

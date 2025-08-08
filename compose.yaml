@@ -4,34 +4,54 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: homecyclhome_api-app
+    # Expose the FPM port
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "127.0.0.1:${API_FPM_PORT:-9001}:9000"
+    env_file:
+      - .env
     environment:
-      APP_ENV: prod
-      APP_DEBUG: 0
-      DATABASE_URL: postgres://symfony:symfony@db:5432/symfony
-      SERVER_NAME: "api.homecyclhome.site"
+      APP_ENV: ${APP_ENV:-prod}
+      APP_DEBUG: ${APP_DEBUG:-0}
+      APP_SECRET: ${APP_SECRET}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Paris}
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-https://*.homecyclhome.site}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
     volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-      - ./Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - var_data:/var/www/html/var
+      - ./config/jwt:/var/www/html/config/jwt:ro
+      - uploads_data:/var/www/html/public/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "php -v >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - backend
 
   db:
     image: postgres:17.5-bookworm
     container_name: homecyclhome_api-db
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: symfony
-      POSTGRES_USER: symfony
-      POSTGRES_PASSWORD: symfony
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h 127.0.0.1 -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - backend
     restart: unless-stopped
@@ -39,11 +59,13 @@ services:
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: homecyclhome_api-pgadmin
+    env_file:
+      - .env
     environment:
-      PGADMIN_DEFAULT_EMAIL: andre.raphael@ik.me
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-change-me}
     ports:
-      - "${PGADMIN_PORT:-5050:80}"
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
     depends_on:
       - db
     networks:
@@ -52,8 +74,10 @@ services:
 
 volumes:
   db_data:
-  caddy_data:
-  caddy_config:
+  var_data:
+  uploads_data:
 
 networks:
   backend:
+    driver: bridge
+    internal: false

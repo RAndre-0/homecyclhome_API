@@ -54,12 +54,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[MaxDepth(1)]
     private Collection $interventions;
 
-    /**
-     * @var Collection<int, CommentaireIntervention>
-     */
-    #[ORM\OneToMany(targetEntity: CommentaireIntervention::class, mappedBy: 'technicien')]
-    private Collection $commentaireInterventions;
-
     #[ORM\OneToOne(mappedBy: 'technicien', cascade: ['persist', 'remove'])]
     private ?Zone $zone = null;
 
@@ -84,7 +78,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->demandesIntervention = new ArrayCollection();
         $this->interventions = new ArrayCollection();
-        $this->commentaireInterventions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -239,36 +232,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($intervention->getTechnicien() === $this) {
                 $intervention->setTechnicien(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, CommentaireIntervention>
-     */
-    public function getCommentaireInterventions(): Collection
-    {
-        return $this->commentaireInterventions;
-    }
-
-    public function addCommentaireIntervention(CommentaireIntervention $commentaireIntervention): static
-    {
-        if (!$this->commentaireInterventions->contains($commentaireIntervention)) {
-            $this->commentaireInterventions->add($commentaireIntervention);
-            $commentaireIntervention->setTechnicien($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCommentaireIntervention(CommentaireIntervention $commentaireIntervention): static
-    {
-        if ($this->commentaireInterventions->removeElement($commentaireIntervention)) {
-            // set the owning side to null (unless already changed)
-            if ($commentaireIntervention->getTechnicien() === $this) {
-                $commentaireIntervention->setTechnicien(null);
             }
         }
 

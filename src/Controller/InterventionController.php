@@ -261,6 +261,7 @@ class InterventionController extends AbstractController
     #[IsGranted("ROLE_TECHNICIEN")]
     public function validerIntervention(
         int $id,
+        Request $request,
         InterventionRepository $interventionRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
@@ -279,9 +280,14 @@ class InterventionController extends AbstractController
         ) {
             return new JsonResponse(['error' => 'Accès interdit.'], Response::HTTP_FORBIDDEN);
         }
+        // Récupération du commentaire du technicien
+        $data = json_decode($request->getContent(), true);
 
         try {
             $intervention->setFinalisee(true);
+            if(isset($data["commentaire_technicien"])) {
+                $intervention->setCommentaireTechnicien($data["commentaire_technicien"]);
+            }
             $entityManager->persist($intervention);
             $entityManager->flush();
 

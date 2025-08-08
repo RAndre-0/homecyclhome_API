@@ -1,20 +1,18 @@
 #!/bin/bash
+set -euo pipefail
 
-set -e
-
-echo "Attente que PostgreSQL soit prêt sur host: database port: 5432..."
-
-# Attendre que PostgreSQL accepte les connexions
-until pg_isready -h database -p 5432 -U "$POSTGRES_USER"; do
-  echo "PostgreSQL non disponible, nouvelle tentative..."
+echo "Attente DB (${DB_HOST:-db}:${DB_PORT:-5432})…"
+until pg_isready -h "${DB_HOST:-db}" -p "${DB_PORT:-5432}" -U "${POSTGRES_USER:-postgres}"; do
+  echo "PostgreSQL non dispo, on réessaie…"
   sleep 1
 done
 
-echo "BDD prête, lancement des migrations"
+if [ "${RUN_MIGRATIONS:-1}" = "1" ]; then
+  echo "DB prête. Exécution des migrations Doctrine…"
+  php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+else
+  echo "RUN_MIGRATIONS=0 → on saute les migrations."
+fi
 
-# Exécuter les migrations Symfony
-php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-
-# Lancer FrankenPHP
-echo "Lancement de FrankenPHP"
-exec frankenphp run --config /etc/caddy/Caddyfile
+echo "Démarrage de PHP-FPM…"
+exec php-fpm -F

@@ -43,6 +43,10 @@ class Intervention
     #[Groups(["get_interventions", "get_intervention"])]
     private ?string $commentaireClient = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["get_interventions", "get_intervention"])]
+    private ?string $commentaireTechnicien = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(["get_interventions", "get_intervention"])]
     private ?string $photo = null;
@@ -72,12 +76,6 @@ class Intervention
     #[Groups(["get_interventions", "get_intervention"])]
     private ?User $technicien = null;
 
-    /**
-     * @var Collection<int, CommentaireIntervention>
-     */
-    #[ORM\OneToMany(targetEntity: CommentaireIntervention::class, mappedBy: 'intervention')]
-    private Collection $commentaires;
-
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     #[Groups(["get_interventions", "get_intervention"])]
     private ?\DateTimeInterface $debut = null;
@@ -89,7 +87,6 @@ class Intervention
     public function __construct()
     {
         $this->interventionProduit = new ArrayCollection();
-        $this->commentaires = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -160,6 +157,24 @@ class Intervention
     public function setCommentaireClient(?string $commentaireClient): static
     {
         $this->commentaireClient = $commentaireClient;
+        return $this;
+    }
+
+    public function getCommentaireTechnicien(): ?string
+    {
+        return $this->commentaireTechnicien;
+    }
+
+    public function setCommentaireTechnicien(?string $commentaireTechnicien): static
+    {
+        $this->commentaireTechnicien = $commentaireTechnicien;
+
+        return $this;
+    }
+    
+    public function removeCommentaireTechnicien(): static
+    {
+        $this->commentaireTechnicien = null;
         return $this;
     }
 
@@ -247,36 +262,6 @@ class Intervention
     public function setTechnicien(?User $technicien): static
     {
         $this->technicien = $technicien;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, CommentaireIntervention>
-     */
-    public function getCommentaires(): Collection
-    {
-        return $this->commentaires;
-    }
-
-    public function addCommentaire(CommentaireIntervention $commentaire): static
-    {
-        if (!$this->commentaires->contains($commentaire)) {
-            $this->commentaires->add($commentaire);
-            $commentaire->setIntervention($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCommentaire(CommentaireIntervention $commentaire): static
-    {
-        if ($this->commentaires->removeElement($commentaire)) {
-            // set the owning side to null (unless already changed)
-            if ($commentaire->getIntervention() === $this) {
-                $commentaire->setIntervention(null);
-            }
-        }
 
         return $this;
     }
