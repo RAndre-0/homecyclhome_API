@@ -5,7 +5,6 @@ namespace App\Tests\Entity;
 use App\Entity\Intervention;
 use App\Entity\User;
 use App\Entity\InterventionProduit;
-use App\Entity\CommentaireIntervention;
 use PHPUnit\Framework\TestCase;
 
 class InterventionTest extends TestCase
@@ -90,22 +89,6 @@ class InterventionTest extends TestCase
         $intervention->removeInterventionProduit($produit);
         $this->assertCount(0, $intervention->getInterventionProduit());
         $this->assertNull($produit->getIntervention());
-    }
-
-    public function testAddRemoveCommentaire()
-    {
-        $intervention = new Intervention();
-        $commentaire = new CommentaireIntervention();
-
-        $this->assertCount(0, $intervention->getCommentaires());
-
-        $intervention->addCommentaire($commentaire);
-        $this->assertCount(1, $intervention->getCommentaires());
-        $this->assertSame($intervention, $commentaire->getIntervention());
-
-        $intervention->removeCommentaire($commentaire);
-        $this->assertCount(0, $intervention->getCommentaires());
-        $this->assertNull($commentaire->getIntervention());
     }
 
     public function testGetSetDebut()

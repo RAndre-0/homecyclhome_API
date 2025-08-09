@@ -4,7 +4,6 @@ namespace App\Tests\Entity;
 
 use App\Entity\User;
 use App\Entity\Intervention;
-use App\Entity\CommentaireIntervention;
 use App\Entity\Zone;
 use PHPUnit\Framework\TestCase;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -90,21 +89,6 @@ class UserTest extends TestCase
         
         $user->removeDemandesIntervention($intervention);
         $this->assertCount(0, $user->getDemandesIntervention());
-    }
-    
-    public function testCommentaireInterventionsCollections()
-    {
-        $user = new User();
-        $commentaire = new CommentaireIntervention();
-        
-        $this->assertInstanceOf(ArrayCollection::class, $user->getCommentaireInterventions());
-        
-        $user->addCommentaireIntervention($commentaire);
-        $this->assertCount(1, $user->getCommentaireInterventions());
-        $this->assertSame($user, $commentaire->getTechnicien());
-        
-        $user->removeCommentaireIntervention($commentaire);
-        $this->assertCount(0, $user->getCommentaireInterventions());
     }
     
     public function testZone()

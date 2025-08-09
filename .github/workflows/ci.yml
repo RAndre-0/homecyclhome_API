@@ -21,29 +21,37 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready"
+          --health-cmd="pg_isready -U symfony -d symfony_test -h 127.0.0.1"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     env:
       APP_ENV: test
-      DATABASE_URL: "postgresql://symfony:symfony@localhost:5432/symfony_test"
+      DB_URL_LOCALHOST: postgresql://symfony:symfony@127.0.0.1:5432/symfony_test
       JWT_PASSPHRASE: 15beed40ff99cd3c5e99fabed0c3592093ed4169015b5c9933977878e62152f5
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 📝 Create .env file manually
-        run: |
-          echo "APP_ENV=test" > .env
-          echo "DATABASE_URL=postgresql://symfony:symfony@localhost:5432/symfony_test" >> .env
-          echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env
-          echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env
-          echo "JWT_PASSPHRASE=${{ env.JWT_PASSPHRASE }}" >> .env
+      # Purge les .env
+      - name: 🧹 Purge .env* générés (sauf .dist)
+        run: rm -f .env.local.php .env.*.local || true
 
-      - name: ⚙️ Set up PHP with extensions
+      # créer un .env minimal pour satisfaire Dotenv
+      - name: 📝 Create minimal .env
+        run: |
+          {
+            echo "APP_ENV=test"
+            echo "APP_DEBUG=0"
+            echo "DATABASE_URL=${DB_URL_LOCALHOST}"
+            echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem"
+            echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem"
+            echo "JWT_PASSPHRASE=${JWT_PASSPHRASE}"
+          } > .env
+
+      - name: ⚙️ Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -51,24 +59,25 @@ jobs:
           tools: composer
           coverage: xdebug
 
-      - name: 📦 Install Composer dependencies
+      - name: 📦 Composer install
         run: composer install --prefer-dist --no-interaction
 
-      - name: 🔐 Generate JWT keys
-        run: php bin/console lexik:jwt:generate-keypair
+      - name: 🔐 JWT keys
+        run: php bin/console lexik:jwt:generate-keypair --overwrite --no-interaction
         env:
           JWT_PASSPHRASE: ${{ env.JWT_PASSPHRASE }}
 
-      - name: ⚙️ Prepare database
+      - name: ⚙️ DB create + migrate
         run: |
-          php bin/console doctrine:database:create --if-not-exists --env=test
-          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/console doctrine:database:create --if-not-exists --env=test
+          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
-      - name: 🧪 Run PHPUnit tests
-        run: php bin/phpunit --testdox --colors=always
+      - name: 🧪 PHPUnit
+        run: |
+          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/phpunit --testdox --colors=always
 
-      - name: 📊 Upload code coverage
+      - name: 📊 Coverage HTML
         if: always()
         run: |
           mkdir -p coverage
-          php bin/phpunit --coverage-html coverage
+          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/phpunit --coverage-html coverage
