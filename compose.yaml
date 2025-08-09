@@ -27,7 +27,8 @@ services:
     volumes:
       - var_data:/var/www/html/var
       - ./config/jwt:/var/www/html/config/jwt
-      - uploads_data:/var/www/html/public/uploads
+      #- uploads_data:/var/www/html/public/uploads
+      - /srv/homecyclhome/uploads:/var/www/html/public/uploads
     healthcheck:
       test: ["CMD-SHELL", "php -v >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -75,7 +76,7 @@ services:
 volumes:
   db_data:
   var_data:
-  uploads_data:
+  #uploads_data:
 
 networks:
   backend:
