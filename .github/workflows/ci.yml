@@ -45,6 +45,7 @@ jobs:
           {
             echo "APP_ENV=test"
             echo "APP_DEBUG=0"
+            echo "CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?(/.*)?$"
             echo "DATABASE_URL=${DB_URL_LOCALHOST}"
             echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem"
             echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem"
