@@ -167,9 +167,6 @@ class InterventionController extends AbstractController
         try {
             // Récupére les prochaines interventions
             $data = $interventionRepository->getNextInterventions(10);
-            if (empty($data)) {
-                return new JsonResponse(["message" => "Aucune donnée trouvée"], JsonResponse::HTTP_NO_CONTENT);
-            }
             return $this->json($data);
         } catch (\Exception $e) {
             return new JsonResponse(["error" => "Une erreur s'est produite lors de la récupération des prochaines interventions."], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);

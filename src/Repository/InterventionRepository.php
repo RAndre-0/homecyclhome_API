@@ -65,28 +65,36 @@ class InterventionRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function interventionsByTypeLastTwelveMonths(): array
-    {
-        $conn = $this->getEntityManager()->getConnection();
-        $sql = "
-            SELECT 
-                TO_CHAR(debut, 'FMMonth') AS month,
-                COUNT(*) FILTER (WHERE ti.nom = 'Maintenance') AS maintenance,
-                COUNT(*) FILTER (WHERE ti.nom = 'Réparation') AS reparation
+public function interventionsByTypeLastTwelveMonths(): array
+{
+    $conn = $this->getEntityManager()->getConnection();
+    $sql = <<<SQL
+        WITH months AS (
+            SELECT date_trunc('month', (now() - interval '11 months')::date) + (gs.i * interval '1 month') AS month_start
+            FROM generate_series(0,11) AS gs(i)
+        ),
+        agg AS (
+            SELECT
+            date_trunc('month', i.debut) AS month_start,
+            SUM(CASE WHEN ti.nom = 'Maintenance' THEN 1 ELSE 0 END) AS maintenance,
+            SUM(CASE WHEN ti.nom = 'Réparation' THEN 1 ELSE 0 END) AS reparation
             FROM intervention i
-            JOIN type_intervention ti ON i.type_intervention_id = ti.id
-            WHERE debut >= DATE_TRUNC('month', NOW() - INTERVAL '11 months') 
-            AND debut < DATE_TRUNC('month', NOW() + INTERVAL '1 month') 
-            AND client_id IS NOT NULL
-            AND NOT (EXTRACT(MONTH FROM debut) = EXTRACT(MONTH FROM NOW()) 
-                    AND EXTRACT(YEAR FROM debut) = EXTRACT(YEAR FROM NOW()) - 1)
-            GROUP BY month, DATE_TRUNC('month', debut)
-            ORDER BY DATE_TRUNC('month', debut);
-            ";
-
-        $resultSet = $conn->executeQuery($sql);
-        return $resultSet->fetchAllAssociative();
-    }
+            JOIN type_intervention ti ON ti.id = i.type_intervention_id
+            WHERE i.debut >= date_trunc('month', now() - interval '11 months')
+            AND i.debut <  date_trunc('month', now() + interval '1 month')
+            AND i.client_id IS NOT NULL
+            GROUP BY date_trunc('month', i.debut)
+        )
+        SELECT
+        to_char(m.month_start, 'FMMonth') AS month,
+        COALESCE(a.maintenance, 0) AS maintenance,
+        COALESCE(a.reparation, 0)  AS reparation
+        FROM months m
+        LEFT JOIN agg a ON a.month_start = m.month_start
+        ORDER BY m.month_start;
+        SQL;
+    return $conn->executeQuery($sql)->fetchAllAssociative();
+}
 
     public function getNextInterventions(int $limit = 10): array
     {
