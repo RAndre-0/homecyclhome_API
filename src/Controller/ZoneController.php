@@ -133,11 +133,26 @@ final class ZoneController extends AbstractController
                 if (!$technicien) {
                     return new JsonResponse(["error" => "Technicien non trouvé"], Response::HTTP_BAD_REQUEST);
                 }
+                 // Vérifier si ce technicien est déjà assigné à une autre zone
+                $zoneDejaAssignee = $zoneRepository->createQueryBuilder('z')
+                    ->andWhere('z.technicien = :technicien')
+                    ->setParameter('technicien', $technicien)
+                    ->getQuery()
+                    ->getOneOrNullResult();
+
+                if ($zoneDejaAssignee && $zoneDejaAssignee->getId() !== $zone->getId()) {
+                    return new JsonResponse(
+                        ["error" => "Technicien déjà assigné à la zone " . $zoneDejaAssignee->getName()],
+                        Response::HTTP_BAD_REQUEST
+                    );
+                }
+
+                // On assigne le technicien à la zone en cours de modification
                 $zoneModifiee->setTechnicien($technicien);
-            } else {
-                $zoneModifiee->setTechnicien(null);
-            }
-        }
+                    } else {
+                        $zoneModifiee->setTechnicien(null);
+                    }
+                }
         
 
         // Validation des données
