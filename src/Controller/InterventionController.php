@@ -150,12 +150,8 @@ class InterventionController extends AbstractController
     public function interventionsStats(InterventionRepository $interventionRepository): JsonResponse
     {
         try {
-            // Récupére les statistiques des interventions
+            // Récupère les statistiques des interventions
             $data = $interventionRepository->interventionsByTypeLastTwelveMonths();
-            if (empty($data)) {
-                return new JsonResponse(["message" => "Aucune donnée trouvée"], JsonResponse::HTTP_NO_CONTENT);
-            }
-
             // Retourner les données sous forme de JSON
             return $this->json($data);
         } catch (\Exception $e) {
