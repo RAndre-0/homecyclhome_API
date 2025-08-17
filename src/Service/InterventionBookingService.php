@@ -27,7 +27,7 @@ class InterventionBookingService
         string $uploadDir
     ): void {
         // Champs obligatoires
-        $required = ['adresse', 'marqueVelo', 'modeleVelo'];
+        $required = ["adresse", "marqueVelo", "modeleVelo"];
         foreach ($required as $key) {
             if (empty($data[$key])) {
                 throw new \DomainException("Données incomplètes.");
@@ -36,18 +36,18 @@ class InterventionBookingService
 
         $intervention
             ->setClient($client)
-            ->setVeloMarque($data['marqueVelo'])
-            ->setVeloModele($data['modeleVelo'])
-            ->setVeloElectrique((bool)$data['electrique'])
-            ->setCommentaireClient($data['commentaire'] ?? null)
-            ->setAdresse($data['adresse']);
+            ->setVeloMarque($data["marqueVelo"])
+            ->setVeloModele($data["modeleVelo"])
+            ->setVeloElectrique((bool)$data["electrique"])
+            ->setCommentaireClient($data["commentaire"] ?? null)
+            ->setAdresse($data["adresse"]);
 
         if ($photo instanceof UploadedFile) {
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            $mime = $photo->getMimeType() ?? '';
+            $allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+            $mime = $photo->getMimeType() ?? "";
 
             if (!in_array($mime, $allowedMimeTypes, true)) {
-                throw new \DomainException('Format de fichier non autorisé.');
+                throw new \DomainException("Format de fichier non autorisé.");
             }
 
             if ($photo->getSize() > 5 * 1024 * 1024) {
@@ -58,21 +58,21 @@ class InterventionBookingService
             $ancienne = $intervention->getPhoto();
 
             // Génération d'un nom de fichier unique
-            $fileExtension = $photo->guessExtension() ?: 'bin';
-            $fileName = bin2hex(random_bytes(16)) . '.' . $fileExtension;
+            $fileExtension = $photo->guessExtension() ?: "bin";
+            $fileName = bin2hex(random_bytes(16)) . "." . $fileExtension;
 
             // Déplacement du nouveau fichier
             try {
                 $photo->move($uploadDir, $fileName);
             } catch (\Throwable $e) {
-                throw new \RuntimeException('Échec de l’upload du fichier.');
+                throw new \RuntimeException("Échec de l'upload du fichier.");
             }
             
             $intervention->setPhoto($fileName);
 
-            // Suppression de l'ancienne photo si elle existe
+            // Suppression de l"ancienne photo si elle existe
             if ($ancienne) {
-                $ancienChemin = $uploadDir . '/' . $ancienne;
+                $ancienChemin = $uploadDir . "/" . $ancienne;
                 if (file_exists($ancienChemin)) {
                     @unlink($ancienChemin);
                 }
