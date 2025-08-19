@@ -29,7 +29,9 @@ jobs:
           script: |
             set -e
             cd /var/www/homecyclhome/homecyclhome_API
-            sudo chown -R "$USER":"$USER" .
+
+            docker ps >/dev/null
+
             git fetch origin main
             git reset --hard origin/main
 
