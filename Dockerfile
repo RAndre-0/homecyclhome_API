@@ -15,6 +15,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Dépendances PHP (prod)
+RUN git config --global --add safe.directory /var/www/html
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Limites d'upload
