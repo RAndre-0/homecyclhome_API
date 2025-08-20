@@ -23,6 +23,7 @@ find var -type d -exec chmod 2775 {} \;
 chmod -R 2775 public/uploads
 
 # warmup en www-data
+rm -rf var/cache/* || true
 su -s /bin/sh www-data -c "php bin/console cache:warmup --env=prod" || true
 
 echo "Démarrage de PHP-FPM…"

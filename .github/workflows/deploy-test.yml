@@ -33,6 +33,7 @@ jobs:
 
             docker ps >/dev/null
 
+            git config --global --add safe.directory /var/www/homecyclhome_test/homecyclhome_API
             git fetch origin main
             git reset --hard origin/main
 
