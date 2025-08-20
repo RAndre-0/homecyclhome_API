@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: homecyclhome_api-app
+    container_name: ${CONTAINER_NAME:-homecyclhome_api}-app
     # Expose the FPM port
     ports:
       - "127.0.0.1:${API_FPM_PORT:-9001}:9000"
@@ -40,7 +40,7 @@ services:
 
   db:
     image: postgres:17.5-bookworm
-    container_name: homecyclhome_api-db
+    container_name: ${CONTAINER_NAME:-homecyclhome_api}-db
     env_file:
       - .env
     environment:
@@ -60,7 +60,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: homecyclhome_api-pgadmin
+    container_name: ${CONTAINER_NAME:-homecyclhome_api}-pgadmin
     env_file:
       - .env
     environment:

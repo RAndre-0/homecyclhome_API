@@ -1,4 +1,4 @@
-name: Deploy API (server build)
+name: Deploy API (TEST - auto)
 
 on:
   push:
@@ -6,12 +6,11 @@ on:
     paths:
       - "api/**"
       - "compose.yaml"
-      - ".github/workflows/deploy-api.yml"
-  workflow_dispatch:
+      - ".github/workflows/deploy-test.yml"
 
 jobs:
-  deploy:
-    name: Build on VPS & restart app
+  deploy-test:
+    name: Build on VPS & restart (TEST)
     runs-on: ubuntu-latest
     environment: production
     concurrency:
@@ -19,7 +18,7 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: SSH & deploy
+      - name: SSH & deploy (TEST)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -28,19 +27,22 @@ jobs:
           script_stop: true
           script: |
             set -e
-            cd /var/www/homecyclhome/homecyclhome_API
+
+            # Dossier test
+            cd /var/www/homecyclhome_test/homecyclhome_API
 
             docker ps >/dev/null
 
+            git config --global --add safe.directory /var/www/homecyclhome_test/homecyclhome_API
             git fetch origin main
             git reset --hard origin/main
 
+            # Build+up uniquement le service app (db/pgadmin restent inchangés si déjà créés)
             DOCKER_BUILDKIT=1 docker compose build --pull app
             docker compose up -d --no-deps app
 
+            # nettoyage images non utilisées
             docker image prune -f
 
             docker compose ps
             docker compose logs --since=1m app || true
-
-            # docker compose exec -T app php bin/console doctrine:migrations:migrate --no-interaction
