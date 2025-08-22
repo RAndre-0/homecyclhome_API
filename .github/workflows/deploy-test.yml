@@ -14,9 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     concurrency:
-      group: deploy-production
+      group: deploy-test
       cancel-in-progress: false
-
     steps:
       - name: SSH & deploy (TEST)
         uses: appleboy/ssh-action@v1.2.0
@@ -34,15 +33,29 @@ jobs:
             docker ps >/dev/null
 
             git config --global --add safe.directory /var/www/homecyclhome_test/homecyclhome_API
+
+            # Vérification de la clé SSH pour éviter les prompts qui freezent le workflow
+            mkdir -p ~/.ssh
+            touch ~/.ssh/known_hosts
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/known_hosts
+            # On ajoute la clé publique de GitHub si elle n'est pas déjà présente
+            ssh-keygen -F github.com -f ~/.ssh/known_hosts >/dev/null \
+              || ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            export GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes'
+
             git fetch origin main
             git reset --hard origin/main
 
+            # En cas de 1er run
+            docker compose -p homecyclhome_api_test up -d db pgadmin
+
             # Build+up uniquement le service app (db/pgadmin restent inchangés si déjà créés)
-            DOCKER_BUILDKIT=1 docker compose build --pull app
-            docker compose up -d --no-deps app
+            DOCKER_BUILDKIT=1 docker compose -p homecyclhome_api_test build --pull app
+            docker compose -p homecyclhome_api_test up -d --no-deps app
 
             # nettoyage images non utilisées
             docker image prune -f
 
-            docker compose ps
-            docker compose logs --since=1m app || true
+            docker compose -p homecyclhome_api_test ps
+            docker compose -p homecyclhome_api_test logs --since=1m app || true

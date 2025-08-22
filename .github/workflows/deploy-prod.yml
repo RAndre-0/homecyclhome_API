@@ -11,7 +11,6 @@ jobs:
     concurrency:
       group: deploy-production
       cancel-in-progress: false
-
     steps:
       - name: SSH & deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -27,15 +26,27 @@ jobs:
 
             docker ps >/dev/null
 
+            git config --global --add safe.directory /var/www/homecyclhome/homecyclhome_API
+
+            # Vérification de la clé SSH pour éviter les prompts qui freezent le workflow
+            mkdir -p ~/.ssh
+            touch ~/.ssh/known_hosts
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/known_hosts
+            # On ajoute la clé publique de GitHub si elle n'est pas déjà présente
+            ssh-keygen -F github.com -f ~/.ssh/known_hosts >/dev/null \
+              || ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            export GIT_SSH_COMMAND='ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes'
+
             git fetch origin main
             git reset --hard origin/main
 
-            DOCKER_BUILDKIT=1 docker compose build --pull app
-            docker compose up -d --no-deps app
+            DOCKER_BUILDKIT=1 docker compose -p homecyclhome_api build --pull app
+            docker compose -p homecyclhome_api up -d --no-deps app
 
-            docker image prune -f
+            docker image prune -f || true
 
-            docker compose ps
-            docker compose logs --since=1m app || true
+            docker compose -p homecyclhome_api ps
+            docker compose -p homecyclhome_api logs --since=1m app || true
 
             # docker compose exec -T app php bin/console doctrine:migrations:migrate --no-interaction

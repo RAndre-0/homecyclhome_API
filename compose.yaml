@@ -1,5 +1,6 @@
 services:
   app:
+    image: ${CONTAINER_NAME}-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -75,8 +76,9 @@ services:
 
 volumes:
   db_data:
+    name: ${CONTAINER_NAME}_db_data
   var_data:
-  #uploads_data:
+    name: ${CONTAINER_NAME}_var_data
 
 networks:
   backend:
