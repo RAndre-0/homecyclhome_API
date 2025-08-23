@@ -15,8 +15,6 @@ doctrine:
         # either here or in the DATABASE_URL env var (see .env file)
         #server_version: '16'
 
-        profiling_collect_backtrace: '%kernel.debug%'
-        use_savepoints: true
     orm:
         default_entity_manager: default
         entity_managers:
