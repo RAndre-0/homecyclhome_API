@@ -17,6 +17,7 @@ services:
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Paris}
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-https://*.homecyclhome.site}
       DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL_MIGRATIONS: ${DATABASE_URL_MIGRATIONS}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE}
@@ -45,10 +46,15 @@ services:
       - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Initialisation de la base avec le superuser de migrations
+      POSTGRES_USER: ${POSTGRES_USER_MIGRATIONS}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_MIGRATIONS}
+      # Passés au script d’init pour créer le compte runtime
+      APP_DB_USER: ${POSTGRES_USER}
+      APP_DB_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h 127.0.0.1 -p 5432"]
       interval: 10s
