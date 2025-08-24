@@ -3,10 +3,6 @@ name: Deploy API (TEST - auto)
 on:
   push:
     branches: [ main ]
-    paths:
-      - "api/**"
-      - "compose.yaml"
-      - ".github/workflows/deploy-test.yml"
 
 jobs:
   deploy-test:

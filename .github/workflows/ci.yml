@@ -32,7 +32,7 @@ jobs:
       JWT_PASSPHRASE: 15beed40ff99cd3c5e99fabed0c3592093ed4169015b5c9933977878e62152f5
 
     steps:
-      - name: 📥 Checkout code
+      - name: 🔥 Checkout code
         uses: actions/checkout@v4
 
       # Purge les .env
@@ -47,6 +47,7 @@ jobs:
             echo "APP_DEBUG=0"
             echo "CORS_ALLOW_ORIGIN=^https?://(localhost|127\.0\.0\.1|([a-z0-9-]+\.)?homecyclhome\.site)(:[0-9]+)?(/.*)?$"
             echo "DATABASE_URL=${DB_URL_LOCALHOST}"
+            echo "DATABASE_URL_MIGRATIONS=${DB_URL_LOCALHOST}"
             echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem"
             echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem"
             echo "JWT_PASSPHRASE=${JWT_PASSPHRASE}"
@@ -63,22 +64,30 @@ jobs:
       - name: 📦 Composer install
         run: composer install --prefer-dist --no-interaction
 
-      - name: 🔐 JWT keys
+      - name: 🔑 JWT keys
         run: php bin/console lexik:jwt:generate-keypair --overwrite --no-interaction
         env:
           JWT_PASSPHRASE: ${{ env.JWT_PASSPHRASE }}
 
       - name: ⚙️ DB create + migrate
         run: |
-          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/console doctrine:database:create --if-not-exists --env=test
-          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/console doctrine:migrations:migrate --no-interaction --env=test
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+        env:
+          DATABASE_URL: ${{ env.DB_URL_LOCALHOST }}
+          DATABASE_URL_MIGRATIONS: ${{ env.DB_URL_LOCALHOST }}
 
       - name: 🧪 PHPUnit
-        run: |
-          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/phpunit --testdox --colors=always
+        run: php bin/phpunit --testdox --colors=always
+        env:
+          DATABASE_URL: ${{ env.DB_URL_LOCALHOST }}
+          DATABASE_URL_MIGRATIONS: ${{ env.DB_URL_LOCALHOST }}
 
       - name: 📊 Coverage HTML
         if: always()
         run: |
           mkdir -p coverage
-          DATABASE_URL='${{ env.DB_URL_LOCALHOST }}' php bin/phpunit --coverage-html coverage
+          php bin/phpunit --coverage-html coverage
+        env:
+          DATABASE_URL: ${{ env.DB_URL_LOCALHOST }}
+          DATABASE_URL_MIGRATIONS: ${{ env.DB_URL_LOCALHOST }}
