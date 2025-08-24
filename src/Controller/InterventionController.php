@@ -30,12 +30,30 @@ use Symfony\Component\Mime\MimeTypes;
 use Symfony\Bundle\SecurityBundle\Security;
 use App\Service\InterventionBookingService;
 use App\Service\InterventionBatchGenerator;
-
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 
 class InterventionController extends AbstractController
 {
     /* Renvoie tous les interventions */
     #[Route('/api/interventions', name: 'get_interventions', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister toutes les interventions",
+        tags: ["Interventions"],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Liste des interventions",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\Intervention::class, groups: ['get_interventions'])
+                    )
+                )
+            ),
+            new OA\Response(response: 500, description: "Erreur serveur")
+        ]
+    )]
     public function getInterventions(InterventionRepository $interventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
@@ -54,6 +72,26 @@ class InterventionController extends AbstractController
 
     /* Renvoie les interventions d'un technicien */
     #[Route('/api/interventions/technicien/{id}', name: 'get_interventions_technicien', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister les interventions d’un technicien (par ID)",
+        tags: ["Interventions"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+            new OA\Parameter(name: "reservedOnly", in: "query", required: false, schema: new OA\Schema(type: "boolean"), example: false),
+            new OA\Parameter(name: "date", in: "query", required: false, description: "YYYY-MM-DD", schema: new OA\Schema(type: "string", format: "date"))
+        ],
+        responses: [
+            new OA\Response(
+            response: 200,
+            description: "OK",
+            content: new OA\JsonContent(
+                type: "array",
+                items: new OA\Items(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_interventions"]))
+            )
+            ),
+            new OA\Response(response: 400, description: "Paramètres invalides")
+        ]
+    )]
     public function getInterventionsByTechnicien(
         int $id,
         Request $request,
@@ -83,6 +121,21 @@ class InterventionController extends AbstractController
     // Renvoie les interventions d'un technicien authentifié
     #[Route('/api/interventions/technicien', name: 'get_my_interventions', methods: ['GET'])]
     #[IsGranted("ROLE_TECHNICIEN")]
+    #[OA\Get(
+        summary: "Lister MES interventions (technicien connecté)",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "date", in: "query", required: false, description: "YYYY-MM-DD", schema: new OA\Schema(type: "string", format: "date"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "OK",
+            content: new OA\JsonContent(type: "array", items: new OA\Items(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_interventions"])))
+            ),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 400, description: "Paramètres invalides")
+        ]
+    )]
     public function getMyInterventions(
         Request $request,
         InterventionRepository $interventionRepository,
@@ -109,6 +162,15 @@ class InterventionController extends AbstractController
 
     /* Renvoie les interventions d'un client */
     #[Route('/api/interventions/client/{id}', name: 'get_interventions_client', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister les interventions d’un client (par ID)",
+        tags: ["Interventions"],
+        parameters: [ new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")) ],
+        responses: [
+            new OA\Response(response: 200, description: "OK",
+            content: new OA\JsonContent(type: "array", items: new OA\Items(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_interventions"]))))
+        ]
+    )]
     public function getInterventionsByClient(
         int $id,
         InterventionRepository $interventionRepository,
@@ -127,6 +189,17 @@ class InterventionController extends AbstractController
 
     /* Renvoie les interventions d'un client authentifié */
     #[Route('/api/interventions/client', name: 'get_interventions_authenticated_client', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister MES interventions (client connecté)",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "OK",
+            content: new OA\JsonContent(type: "array", items: new OA\Items(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_interventions"])))
+            ),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
     public function getInterventionsAuthenticatedClient(
         Security $security,
         InterventionRepository $interventionRepository,
@@ -147,6 +220,30 @@ class InterventionController extends AbstractController
     /* Renvoie le nombre d'interventions par type et par mois pour les 12 derniers mois */
     #[Route('/api/interventions/stats', name: 'get_interventions_stats', methods: ['GET'])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Get(
+        summary: "Statistiques interventions (12 derniers mois, par type)",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "typeId", type: "integer", example: 3),
+                            new OA\Property(property: "typeLibelle", type: "string", example: "Révision"),
+                            new OA\Property(property: "month", type: "string", example: "2025-07", description: "AAAA-MM"),
+                            new OA\Property(property: "count", type: "integer", example: 12)
+                        ]
+                    )
+                )
+            ),
+            new OA\Response(response: 403, description: "Interdit")
+        ]
+    )]
     public function interventionsStats(InterventionRepository $interventionRepository): JsonResponse
     {
         try {
@@ -162,6 +259,14 @@ class InterventionController extends AbstractController
 
     /* Renvoie les prochaines interventions */
     #[Route('/api/interventions/next-interventions', name: 'get_next_interventions', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Prochaines interventions (limite interne, ex: 10)",
+        tags: ["Interventions"],
+        responses: [
+            new OA\Response(response: 200, description: "OK",
+            content: new OA\JsonContent(type: "array", items: new OA\Items(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_interventions"]))))
+        ]
+    )]
     public function getNextInterventions(InterventionRepository $interventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
@@ -175,6 +280,15 @@ class InterventionController extends AbstractController
 
     /* Retourne une intervention */
     #[Route('/api/interventions/{id}', name: 'get_intervention', methods: ["GET"])]
+        #[OA\Get(
+        summary: "Détail d’une intervention",
+        tags: ["Interventions"],
+        parameters: [ new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")) ],
+        responses: [
+            new OA\Response(response: 200, description: "OK", content: new OA\JsonContent(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_intervention"]))),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function getIntervention(Intervention $intervention, SerializerInterface $serializer): JsonResponse
     {
         $interventionJson = $serializer->serialize($intervention, "json", ["groups" => "get_intervention"]);
@@ -183,6 +297,39 @@ class InterventionController extends AbstractController
 
     /* Créé une nouvelle intervention */
     #[Route("/api/interventions", name: "create_intervention", methods: ["POST"])]
+    #[OA\Post(
+        summary: "Créer une intervention",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["type_intervention","technicien","debut","fin"],
+                properties: [
+                    new OA\Property(property: "type_intervention", type: "integer", example: 3, description: "ID du TypeIntervention"),
+                    new OA\Property(property: "technicien", type: "integer", example: 42, description: "ID du technicien"),
+                    new OA\Property(property: "debut", type: "string", format: "date-time", example: "2025-09-10T09:00:00+02:00"),
+                    new OA\Property(property: "fin", type: "string", format: "date-time", example: "2025-09-10T10:00:00+02:00"),
+                    new OA\Property(property: "adresse", type: "string", example: "12 rue de Paris, 75003"),
+                    new OA\Property(property: "veloCategorie", type: "string", example: "VTC"),
+                    new OA\Property(property: "veloElectrique", type: "boolean", example: false),
+                    new OA\Property(property: "veloMarque", type: "string", example: "Decathlon"),
+                    new OA\Property(property: "veloModele", type: "string", example: "Riverside 500"),
+                    new OA\Property(property: "commentaireClient", type: "string", example: "Clic-clic au pédalier")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créée",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_intervention"]))
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
     public function newIntervention(
         Request $request,
         EntityManagerInterface $em,
@@ -239,6 +386,63 @@ class InterventionController extends AbstractController
 
     /* Modifie une intervention */
     #[Route("/api/interventions/{id}/edit", name: "update_intervention", methods: ["PUT", "PATCH"])]
+    #[OA\Put(
+        summary: "Remplacer une intervention",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(
+                name: "id",
+                in: "path",
+                required: true,
+                schema: new OA\Schema(type: "integer")
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "debut", type: "string", format: "date-time"),
+                    new OA\Property(property: "fin", type: "string", format: "date-time"),
+                    new OA\Property(property: "adresse", type: "string"),
+                    new OA\Property(property: "veloCategorie", type: "string"),
+                    new OA\Property(property: "veloElectrique", type: "boolean"),
+                    new OA\Property(property: "veloMarque", type: "string"),
+                    new OA\Property(property: "veloModele", type: "string"),
+                    new OA\Property(property: "commentaireClient", type: "string"),
+                    new OA\Property(property: "commentaireTechnicien", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 204, description: "Modifiée"),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
+    #[OA\Patch(
+        summary: "Modifier partiellement une intervention",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(
+                name: "id",
+                in: "path",
+                required: true,
+                schema: new OA\Schema(type: "integer")
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(type: "object") // tu peux détailler si tu veux
+        ),
+        responses: [
+            new OA\Response(response: 204, description: "Modifiée"),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
     public function editIntervention(Request $request, Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
     {
         $interventionModifiee = $serializer->deserialize($request->getContent(), Intervention::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $intervention]);
@@ -251,7 +455,34 @@ class InterventionController extends AbstractController
 
     // Permet aux techniciens et aux administrateurs de valider une intervention
     #[Route('/api/interventions/{id}/validate', name: 'validate_intervention', methods: ['POST'])]
-    #[IsGranted("ROLE_TECHNICIEN")]
+    #[IsGranted("is_granted('ROLE_TECHNICIEN') or is_granted('ROLE_ADMIN')")]
+    #[OA\Post(
+        summary: "Valider/finaliser une intervention",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(
+                        property: "commentaire_technicien",
+                        type: "string",
+                        example: "Purge des freins OK"
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Intervention finalisée"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit (ni admin, ni technicien assigné)"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function validerIntervention(
         int $id,
         Request $request,
@@ -293,6 +524,34 @@ class InterventionController extends AbstractController
     /* Supprime les interventions dans une plage de dates pour les techniciens listés */
     #[Route('/api/interventions/delete', name: 'delete_interventions', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer en masse des interventions non réservées",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["technicians","from","to"],
+                properties: [
+                    new OA\Property(
+                        property: "technicians",
+                        type: "array",
+                        items: new OA\Items(type: "integer"),
+                        example: [12, 34]
+                    ),
+                    new OA\Property(property: "from", type: "string", format: "date", example: "2025-09-01"),
+                    new OA\Property(property: "to", type: "string", format: "date", example: "2025-09-30")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Supprimées"),
+            new OA\Response(response: 400, description: "Paramètres invalides"),
+            new OA\Response(response: 404, description: "Technicien introuvable"),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
     public function deleteInterventions(
         Request $request,
         UserRepository $userRepository,
@@ -352,6 +611,13 @@ class InterventionController extends AbstractController
     /* Supprime une intervention */
     #[Route('/api/interventions/{id}', name: 'delete_intervention', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer une intervention",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        parameters: [ new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")) ],
+        responses: [ new OA\Response(response: 204, description: "Supprimée"), new OA\Response(response: 404, description: "Introuvable") ]
+    )]
     public function deleteIntervention(Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $produits = $intervention->getInterventionProduit();
@@ -367,6 +633,50 @@ class InterventionController extends AbstractController
     /* Créé des interventions à partir d'un modèle */
     #[Route('/api/new-interventions', name: 'create_interventions_from_modele', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Post(
+        summary: "Générer des interventions à partir d’un modèle de planning",
+        tags: ["Interventions"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["model","technicians","from","to"],
+                properties: [
+                    new OA\Property(
+                        property: "model",
+                        type: "integer",
+                        example: 5,
+                        description: "ID du ModelePlanning"
+                    ),
+                    new OA\Property(
+                        property: "technicians",
+                        type: "array",
+                        items: new OA\Items(type: "integer"),
+                        example: [12, 34]
+                    ),
+                    new OA\Property(
+                        property: "from",
+                        type: "string",
+                        format: "date",
+                        example: "2025-09-01"
+                    ),
+                    new OA\Property(
+                        property: "to",
+                        type: "string",
+                        format: "date",
+                        example: "2025-09-30"
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "Créées"),
+            new OA\Response(response: 400, description: "Paramètres invalides"),
+            new OA\Response(response: 404, description: "Modèle/technicien introuvable"),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
     public function createInterventionsFromModele(
         Request $request,
         ModelePlanningRepository $modelePlanningRepository,
@@ -430,6 +740,40 @@ class InterventionController extends AbstractController
 
 
     #[Route('/api/interventions/available/{technicienId}', name: 'get_available_slots', methods: ['GET'])]
+    #[OA\Get(
+        summary: "Lister les créneaux disponibles d’un technicien (à partir de demain)",
+        tags: ["Interventions"],
+        parameters: [
+            new OA\Parameter(
+                name: "technicienId",
+                in: "path",
+                required: true,
+                description: "ID du technicien",
+                schema: new OA\Schema(type: "integer", example: 42)
+            ),
+            new OA\Parameter(
+                name: "typeId",
+                in: "query",
+                required: false,
+                description: "Filtrer par type d’intervention",
+                schema: new OA\Schema(type: "integer", example: 3)
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\Intervention::class, groups: ["get_intervention"])
+                    )
+                )
+            ),
+            new OA\Response(response: 400, description: "Type d’intervention introuvable"),
+            new OA\Response(response: 404, description: "Technicien introuvable")
+        ]
+    )]
     public function getAvailableSlots(
         int $technicienId,
         Request $request,
@@ -469,6 +813,32 @@ class InterventionController extends AbstractController
     }
 
     #[Route('/api/interventions/{id}/book', name: 'book_intervention', methods: ['POST'])]
+    #[OA\Post(
+        summary: "Réserver une intervention pour un client",
+        tags: ["Interventions"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    type: "object",
+                    required: ["clientId"],
+                    properties: [
+                        new OA\Property(property: "clientId", type: "integer", example: 101),
+                        new OA\Property(property: "photo", type: "string", format: "binary", description: "Photo du vélo (optionnelle)")
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Réservée"),
+            new OA\Response(response: 404, description: "Intervention/Client introuvable"),
+            new OA\Response(response: 400, description: "Règle métier non satisfaite")
+        ]
+    )]
     public function bookIntervention(
         int $id,
         Request $request,

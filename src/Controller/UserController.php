@@ -19,26 +19,39 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 
 
 class UserController extends AbstractController
 {
-    /* Renvoie tous les utilisateurs */
-    // #[Route('/api/users', name: 'users', methods: ["GET"])]
-    // public function get_users(UserRepository $userRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
-    // {
-    //     $id_cache = "get_users";
-
-    //     $liste_users = $cache->get($id_cache, function (ItemInterface $item) use ($userRepository, $serializer) {
-    //         $item->tag("users_cache");
-    //         $liste_users = $userRepository->findAll();
-    //         return $serializer->serialize($liste_users, "json", ["groups" => "get_users"]);
-    //     });
-
-    //     return new JsonResponse($liste_users, Response::HTTP_OK, [], true);
-    // }
     #[Route('/api/users', name: 'users_all', methods: ["GET"])]
     #[Route('/api/users/role-{role?}', name: 'users', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister les utilisateurs (option: filtrer par rôle)",
+        tags: ["Utilisateurs"],
+        parameters: [
+            new OA\Parameter(
+                name: "role",
+                in: "path",
+                required: false,
+                description: "Filtrer par rôle (ex: ROLE_TECHNICIEN, ROLE_ADMIN, ROLE_USER)",
+                schema: new OA\Schema(type: "string", example: "ROLE_TECHNICIEN")
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\User::class, groups: ["get_users"])
+                    )
+                )
+            )
+        ]
+    )]
     public function getUsers(
         UserRepository $userRepository,
         SerializerInterface $serializer,
@@ -64,6 +77,21 @@ class UserController extends AbstractController
 
     /* Retourne un utilisateur */
     #[Route('/api/users/{id<\d+>}', name: 'user', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Détail d’un utilisateur",
+        tags: ["Utilisateurs"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\User::class, groups: ["get_user"]))
+            ),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function getOneUser(User $user, UserRepository $userRepository, SerializerInterface $serializer): JsonResponse
     {
         $userJson = $serializer->serialize($user, 'json', ["groups" => "get_user"]);
@@ -72,6 +100,19 @@ class UserController extends AbstractController
 
     /* Retourne l'utilisateur connecté */
     #[Route('/api/users/me', name: 'user_me', methods: ['GET'])]
+    #[OA\Get(
+        summary: "Mon profil (utilisateur connecté)",
+        tags: ["Utilisateurs"],
+        security: [["Bearer" => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\User::class, groups: ["get_user"]))
+            ),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
     public function getCurrentUser(SerializerInterface $serializer): JsonResponse
     {
         /** @var User $user */
@@ -85,6 +126,20 @@ class UserController extends AbstractController
     /* Supprime un utilisateur */
     #[Route('/api/users/{id}', name: 'delete_user', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer un utilisateur",
+        tags: ["Utilisateurs"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 204, description: "Supprimé"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function deleteUser(User $user, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         $em->remove($user);
@@ -96,6 +151,41 @@ class UserController extends AbstractController
     /* Créé un nouveau user */
     #[Route('/api/users', name: 'create_user', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Post(
+        summary: "Créer un utilisateur (admin)",
+        tags: ["Utilisateurs"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["email","password"],
+                properties: [
+                    new OA\Property(property: "email", type: "string", format: "email", example: "client@example.com"),
+                    new OA\Property(property: "password", type: "string", example: "S3cr3t!"),
+                    new OA\Property(
+                        property: "roles",
+                        type: "array",
+                        items: new OA\Items(type: "string"),
+                        example: ["ROLE_USER"]
+                    ),
+                    new OA\Property(property: "firstName", type: "string", nullable: true, example: "Camille"),
+                    new OA\Property(property: "lastName", type: "string", nullable: true, example: "Durand"),
+                    new OA\Property(property: "phoneNumber", type: "string", nullable: true, example: "+33 6 12 34 56 78")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créé",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\User::class, groups: ["get_users"]))
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit")
+        ]
+    )]
     public function createUser(Request $request, EntityManagerInterface $em, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator, UserPasswordHasherInterface $passwordHasher, TagAwareCacheInterface $cache): JsonResponse
     {
         $user = $serializer->deserialize($request->getContent(), User::class, "json");
@@ -120,6 +210,53 @@ class UserController extends AbstractController
 
     /* Met à jour un utilisateur existant */
     #[Route('/api/users/{id}', name: 'update_user', methods: ["PUT", "PATCH"])]
+    #[OA\Put(
+        summary: "Remplacer un utilisateur",
+        tags: ["Utilisateurs"],
+        security: [["Bearer" => []]],
+        parameters: [ new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")) ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "email", type: "string", format: "email"),
+                    new OA\Property(property: "password", type: "string", description: "Sera re-hashé si fourni"),
+                    new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "firstName", type: "string"),
+                    new OA\Property(property: "lastName", type: "string"),
+                    new OA\Property(property: "phoneNumber", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\User::class, groups: ["get_user"]))
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
+    #[OA\Patch(
+        summary: "Modifier partiellement un utilisateur",
+        tags: ["Utilisateurs"],
+        security: [["Bearer" => []]],
+        parameters: [ new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")) ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(type: "object") // champs partiels
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\User::class, groups: ["get_user"]))
+            ),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function updateUser(User $user, EntityManagerInterface $em, SerializerInterface $serializer, UserRepository $userRepository, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
         $userModifie = $serializer->deserialize($request->getContent(), User::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $user]);
@@ -131,6 +268,52 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/register', name: 'register_user', methods: ['POST'])]
+    #[OA\Post(
+        summary: "Inscription (retourne un token JWT)",
+        tags: ["Auth"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["email","password"],
+                properties: [
+                    new OA\Property(property: "email", type: "string", format: "email", example: "client@example.com"),
+                    new OA\Property(property: "password", type: "string", example: "S3cr3t!"),
+                    new OA\Property(property: "firstName", type: "string", nullable: true, example: "Camille"),
+                    new OA\Property(property: "lastName", type: "string", nullable: true, example: "Durand"),
+                    new OA\Property(property: "phoneNumber", type: "string", nullable: true, example: "+33 6 12 34 56 78")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créé",
+                content: new OA\JsonContent(
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "token", type: "string", example: "eyJ0eXAiOiJKV1QiLCJhbGciOi..."),
+                        new OA\Property(
+                            property: "user",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "id", type: "integer", example: 123),
+                                new OA\Property(property: "email", type: "string", format: "email", example: "client@example.com"),
+                                new OA\Property(
+                                    property: "roles",
+                                    type: "array",
+                                    items: new OA\Items(type: "string"),
+                                    example: ["ROLE_USER"]
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 409, description: "Email déjà utilisée")
+        ]
+    )]
     public function register(
         Request $request,
         EntityManagerInterface $em,

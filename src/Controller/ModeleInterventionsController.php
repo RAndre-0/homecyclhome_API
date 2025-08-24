@@ -18,11 +18,31 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Modèles ↔ Interventions", description: "Association N–N entre modèles de planning et interventions")]
 class ModeleInterventionsController extends AbstractController
 {
     /* Renvoie les relations modèle interventions */
     #[Route('/api/modele-interventions', name: 'get_modele_interventions', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister toutes les associations Modèle ↔ Type d'intervention",
+        tags: ["Modèles ↔ Interventions"],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\ModeleInterventions::class, groups: ["get_modele_interventions"])
+                    )
+                )
+            ),
+            new OA\Response(response: 500, description: "Erreur serveur")
+        ]
+    )]
     public function getModeleInterventions(ModeleInterventionsRepository $modeleInterventionsRepository, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
     {
         try {
@@ -42,6 +62,23 @@ class ModeleInterventionsController extends AbstractController
 
     /* Retourne un type d'intervention du modèle */
     #[Route('/api/modele-interventions/{id}', name: "get_modele_intervention", methods: ["GET"])]
+    #[OA\Get(
+        summary: "Détail d'une association Modèle ↔ Type d'intervention",
+        tags: ["Modèles ↔ Interventions"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\ModeleInterventions::class, groups: ["get_modele_intervention"])
+                )
+            ),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function getModeleIntervention(ModeleInterventions $modeleInterventions, SerializerInterface $serializer): JsonResponse
     {
         if (!$modeleInterventions) {
@@ -58,6 +95,20 @@ class ModeleInterventionsController extends AbstractController
     /* Supprime une intervention du modèle */
     #[Route('/api/modele-interventions/{id}', name: "delete_modele_intervention", methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer une association Modèle ↔ Type d'intervention",
+        tags: ["Modèles ↔ Interventions"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 204, description: "Lien supprimé"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Lien introuvable")
+        ]
+    )]
     public function deleteModeleIntervention(ModeleInterventions $modeleInterventions, TagAwareCacheInterface $cache, EntityManagerInterface $em): JsonResponse
     {
         if (!$modeleInterventions) {
@@ -77,6 +128,52 @@ class ModeleInterventionsController extends AbstractController
     /* Créé une intervention dans le modèle */
     #[Route("/api/modele-interventions", name: "create_modele_intervention", methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Post(
+        summary: "Créer une association Modèle ↔ Type d'intervention",
+        tags: ["Modèles ↔ Interventions"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["type_intervention","modele_planning","intervention_time"],
+                properties: [
+                    new OA\Property(
+                        property: "type_intervention",
+                        type: "integer",
+                        example: 3,
+                        description: "ID du TypeIntervention"
+                    ),
+                    new OA\Property(
+                        property: "modele_planning",
+                        type: "integer",
+                        example: 12,
+                        description: "ID du ModelePlanning"
+                    ),
+                    new OA\Property(
+                        property: "intervention_time",
+                        type: "string",
+                        format: "date-time",
+                        example: "2025-09-10T09:00:00+02:00",
+                        description: "Horodatage de l'intervention dans le modèle"
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créé",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\ModeleInterventions::class, groups: ["get_modele_intervention"])
+                )
+            ),
+            new OA\Response(response: 400, description: "Paramètres invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Modèle ou type d'intervention introuvable")
+        ]
+    )]
     public function createModeleIntervention(
         SerializerInterface $serializer,
         EntityManagerInterface $em,

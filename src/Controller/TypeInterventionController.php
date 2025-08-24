@@ -18,11 +18,30 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 
 class TypeInterventionController extends AbstractController
 {
     /* Retourne la liste des types d'intervention' */
     #[Route('/api/types-intervention', name: 'get_types_intervention', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister les types d'intervention",
+        tags: ["Types d'intervention"],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\TypeIntervention::class, groups: ["get_types_intervention"])
+                    )
+                )
+            ),
+            new OA\Response(response: 500, description: "Erreur serveur")
+        ]
+    )]
     public function getTypesIntervention(TypeInterventionRepository $typeInterventionRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
@@ -41,6 +60,23 @@ class TypeInterventionController extends AbstractController
 
     /* Retourne un type d'intervention */
     #[Route('/api/types-intervention/{id}', name: 'get_type_intervention', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Détail d’un type d’intervention",
+        tags: ["Types d'intervention"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\TypeIntervention::class, groups: ["get_type_Intervention"])
+                )
+            ),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function getTypeIntervention(TypeIntervention $typeIntervention, SerializerInterface $serializer): JsonResponse
     {
         if (!$typeIntervention) {
@@ -57,6 +93,35 @@ class TypeInterventionController extends AbstractController
     /* Nouveau type d'intervention */
     #[Route('/api/types-intervention', name: 'create_type_intervention', methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Post(
+        summary: "Créer un type d’intervention",
+        tags: ["Types d'intervention"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["nom","duree","prixDepart"],
+                properties: [
+                    new OA\Property(property: "nom", type: "string", example: "Révision complète"),
+                    new OA\Property(property: "duree", type: "string", format: "time", example: "01:00:00", description: "HH:MM:SS"),
+                    new OA\Property(property: "prixDepart", type: "string", example: "39.90")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créé",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\TypeIntervention::class, groups: ["get_type_Intervention"])
+                )
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit")
+        ]
+    )]
     public function createTypeIntervention(
         SerializerInterface $serializer,
         EntityManagerInterface $em,
@@ -89,6 +154,64 @@ class TypeInterventionController extends AbstractController
     /* Modifie un type d'intervention */
     #[Route("api/types-intervention/{id}", name: "update_type_intervention", methods: ["PATCH", "PUT"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Put(
+        summary: "Remplacer un type d’intervention",
+        tags: ["Types d'intervention"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "nom", type: "string"),
+                    new OA\Property(property: "duree", type: "string", format: "time", description: "HH:MM:SS"),
+                    new OA\Property(property: "prixDepart", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\TypeIntervention::class, groups: ["get_type_Intervention"])
+                )
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
+    #[OA\Patch(
+        summary: "Modifier partiellement un type d’intervention",
+        tags: ["Types d'intervention"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object" // champs partiels: nom, duree, prixDepart
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\TypeIntervention::class, groups: ["get_type_Intervention"])
+                )
+            ),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function updateTypeIntervention(
         TypeIntervention $typeIntervention, 
         SerializerInterface $serializer, 
@@ -119,6 +242,19 @@ class TypeInterventionController extends AbstractController
     /* Supprime un type d'intervention et les interventions qui lui sont liées */
     #[Route('/api/types-intervention/{id}', name: 'delete_type_intervention', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer un type d’intervention (et ses interventions liées)",
+        tags: ["Types d'intervention"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 204, description: "Supprimé"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit")
+        ]
+    )]
     public function deleteTypeIntervention(EntityManagerInterface $em, TypeIntervention $typeIntervention, TagAwareCacheInterface $cache): JsonResponse 
     {
         $interventions = $typeIntervention->getInterventions();

@@ -18,11 +18,30 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Cache\CacheItem;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 
 final class ZoneController extends AbstractController
 {
     /* Renvoie toutes les zones */
     #[Route("/api/zones", name: "get_zones", methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister toutes les zones",
+        tags: ["Zones"],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\Zone::class, groups: ["get_zones"])
+                    )
+                )
+            ),
+            new OA\Response(response: 500, description: "Erreur serveur")
+        ]
+    )]
     public function getZones(ZoneRepository $zoneRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         $cache->invalidateTags(["zones_cache"]);
@@ -39,6 +58,57 @@ final class ZoneController extends AbstractController
 
     /* Créé une nouvelle zone */
     #[Route("/api/zones", name: "create_zone", methods: ["POST"])]
+    #[OA\Post(
+        summary: "Créer une zone",
+        tags: ["Zones"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["name"],
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "Paris Est"),
+                    new OA\Property(
+                        property: "color",
+                        type: "string",
+                        example: "#757575",
+                        description: "Couleur hexadécimale (6 caractères)"
+                    ),
+                    new OA\Property(
+                        property: "coordinates",
+                        type: "array",
+                        description: "Liste des points du polygone (latitude/longitude)",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "latitude", type: "number", format: "float", example: 48.8566),
+                                new OA\Property(property: "longitude", type: "number", format: "float", example: 2.3522)
+                            ]
+                        )
+                    ),
+                    new OA\Property(
+                        property: "technicien",
+                        type: "object",
+                        nullable: true,
+                        description: "Affectation optionnelle d’un technicien (par ID)",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 42)
+                        ]
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créée",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\Zone::class, groups: ["get_zones"]))
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 409, description: "Une zone avec ce nom existe déjà"),
+            new OA\Response(response: 500, description: "Erreur serveur")
+        ]
+    )]
     public function newZone(
         ZoneRepository $zoneRepository,
         Request $request,
@@ -88,6 +158,21 @@ final class ZoneController extends AbstractController
 
     /* Retourne une zone */
     #[Route("/api/zones/{id}", name: "get_zone", methods: ["GET"])]
+    #[OA\Get(
+        summary: "Détail d’une zone",
+        tags: ["Zones"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\Zone::class, groups: ["get_zones"]))
+            ),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function showZone(Zone $zone = null, SerializerInterface $serializer): JsonResponse
     {
         if (!$zone) {
@@ -98,6 +183,71 @@ final class ZoneController extends AbstractController
 
     /* Modifie une zone */
     #[Route("/api/zones/{id}/edit", name: "update_zone", methods: ["PUT", "PATCH"])]
+    #[OA\Put(
+        summary: "Remplacer une zone",
+        tags: ["Zones"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "name", type: "string"),
+                    new OA\Property(property: "color", type: "string", example: "#4CAF50"),
+                    new OA\Property(
+                        property: "coordinates",
+                        type: "array",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "latitude", type: "number", format: "float"),
+                                new OA\Property(property: "longitude", type: "number", format: "float")
+                            ]
+                        )
+                    ),
+                    new OA\Property(
+                        property: "technicien",
+                        type: "object",
+                        nullable: true,
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", nullable: true)
+                        ]
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\Zone::class, groups: ["get_zones"]))
+            ),
+            new OA\Response(response: 400, description: "Données invalides / Technicien déjà assigné"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
+    #[OA\Patch(
+        summary: "Modifier partiellement une zone",
+        tags: ["Zones"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(type: "object")
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(ref: new Model(type: \App\Entity\Zone::class, groups: ["get_zones"]))
+            ),
+            new OA\Response(response: 400, description: "Données invalides / Technicien déjà assigné"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function editZone(
         Request $request,
         Zone $zone = null,
@@ -176,6 +326,20 @@ final class ZoneController extends AbstractController
     /* Supprime une zone */
     #[Route('/api/zones/{id}', name: 'delete_zone', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer une zone",
+        tags: ["Zones"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 204, description: "Supprimée"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function deleteZone(Zone $zone = null, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
         if (!$zone) {
@@ -195,6 +359,47 @@ final class ZoneController extends AbstractController
 
     /* Vérifie si une coordonnée est couverte */
     #[Route("/api/zones/check", name: "check_zone_coverage", methods: ["POST"])]
+    #[OA\Post(
+        summary: "Vérifier si des coordonnées sont couvertes par une zone",
+        tags: ["Zones"],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                required: ["latitude","longitude"],
+                properties: [
+                    new OA\Property(property: "latitude", type: "number", format: "float", example: 48.8566),
+                    new OA\Property(property: "longitude", type: "number", format: "float", example: 2.3522)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    oneOf: [
+                        new OA\Schema( // couvert
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "covered", type: "boolean", example: true),
+                                new OA\Property(property: "zone_id", type: "integer", example: 7),
+                                new OA\Property(property: "zone_name", type: "string", example: "Paris Est"),
+                                new OA\Property(property: "technicien_id", type: "integer", nullable: true, example: 42)
+                            ]
+                        ),
+                        new OA\Schema( // non couvert
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "covered", type: "boolean", example: false)
+                            ]
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: "Latitude/Longitude manquantes")
+        ]
+    )]
     public function checkZoneCoverage(Request $request, ZoneRepository $zoneRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);

@@ -20,11 +20,30 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 
 class ModelePlanningController extends AbstractController
 {
     /* Renvoie tous les modeles */
     #[Route('/api/modeles-planning', name: 'get_modeles_planning', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Lister les modèles de planning",
+        tags: ["Modèles de planning"],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    type: "array",
+                    items: new OA\Items(
+                        ref: new Model(type: \App\Entity\ModelePlanning::class, groups: ["get_modele_plannings"])
+                    )
+                )
+            ),
+            new OA\Response(response: 500, description: "Erreur serveur")
+        ]
+    )]
     public function getModelesPlanning(ModelePlanningRepository $modelePlanningRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         try {
@@ -44,6 +63,23 @@ class ModelePlanningController extends AbstractController
 
     /* Renvoie un modèle de planning */
     #[Route('/api/modeles-planning/{id}', name: 'get_modele_planning', methods: ["GET"])]
+    #[OA\Get(
+        summary: "Détail d’un modèle de planning",
+        tags: ["Modèles de planning"],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\ModelePlanning::class, groups: ["get_modele_planning"])
+                )
+            ),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function getModelePlanning(ModelePlanning $modelePlanning, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
     {
         if (!$modelePlanning) {
@@ -56,6 +92,19 @@ class ModelePlanningController extends AbstractController
     /* Supprime un modèle de planning et les types d'intervention liés */
     #[Route('/api/modeles-planning/{id}', name: 'delete_modele_planning', methods: ["DELETE"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Delete(
+        summary: "Supprimer un modèle de planning",
+        tags: ["Modèles de planning"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 204, description: "Supprimé"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit")
+        ]
+    )]
     public function deleteModelePlanning(
         ModelePlanning $modelePlanning,
         TagAwareCacheInterface $cache,
@@ -82,6 +131,74 @@ class ModelePlanningController extends AbstractController
     /* Modifie un modèle de planning */
     #[Route("/api/modeles-planning/{id}", name: "update_modele_planning", methods: ["PUT", "PATCH"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Put(
+        summary: "Remplacer un modèle de planning",
+        tags: ["Modèles de planning"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "nom", type: "string"),
+                    new OA\Property(property: "description", type: "string", nullable: true),
+                    new OA\Property(
+                        property: "slots",
+                        type: "array",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "jour", type: "integer"),
+                                new OA\Property(property: "debut", type: "string"),
+                                new OA\Property(property: "fin", type: "string"),
+                                new OA\Property(property: "duree", type: "integer")
+                            ]
+                        )
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\ModelePlanning::class, groups: ["get_modele_planning"])
+                )
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
+    #[OA\Patch(
+        summary: "Modifier partiellement un modèle de planning",
+        tags: ["Modèles de planning"],
+        security: [["Bearer" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(type: "object")
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "OK",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\ModelePlanning::class, groups: ["get_modele_planning"])
+                )
+            ),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit"),
+            new OA\Response(response: 404, description: "Introuvable")
+        ]
+    )]
     public function updateModelePlanning(
         SerializerInterface $serializer, 
         EntityManagerInterface $em, 
@@ -114,6 +231,50 @@ class ModelePlanningController extends AbstractController
     /* Créé un nouveau modèle de planning */
     #[Route("/api/modeles-planning", name: "create_modele_planning", methods: ["POST"])]
     #[IsGranted("ROLE_ADMIN", message: "Droits insuffisants.")]
+    #[OA\Post(
+        summary: "Créer un modèle de planning",
+        tags: ["Modèles de planning"],
+        security: [["Bearer" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                // adapte les champs à ton entité : nom, description, jours/horaires, etc.
+                required: ["nom"],
+                properties: [
+                    new OA\Property(property: "nom", type: "string", example: "Semaine standard"),
+                    new OA\Property(property: "description", type: "string", nullable: true, example: "Créneaux 9h–18h du lundi au vendredi"),
+                    // Exemple si tu stockes des créneaux paramétrés :
+                    new OA\Property(
+                        property: "slots",
+                        type: "array",
+                        description: "Liste de créneaux du modèle (facultatif)",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "jour", type: "integer", example: 1, description: "1=lundi ... 7=dimanche"),
+                                new OA\Property(property: "debut", type: "string", example: "09:00"),
+                                new OA\Property(property: "fin", type: "string", example: "18:00"),
+                                new OA\Property(property: "duree", type: "integer", example: 60, description: "Durée d’un slot (minutes)")
+                            ]
+                        )
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: "Créé",
+                content: new OA\JsonContent(
+                    ref: new Model(type: \App\Entity\ModelePlanning::class, groups: ["get_modele_planning"])
+                )
+            ),
+            new OA\Response(response: 400, description: "Données invalides"),
+            new OA\Response(response: 401, description: "Non authentifié"),
+            new OA\Response(response: 403, description: "Interdit")
+        ]
+    )]
     public function createModelePlanning(
         SerializerInterface $serializer,
         EntityManagerInterface $em,
