@@ -30,7 +30,7 @@ services:
       - var_data:/var/www/html/var
       - ./config/jwt:/var/www/html/config/jwt
       #- uploads_data:/var/www/html/public/uploads
-      - /srv/homecyclhome/uploads:/var/www/html/public/uploads
+      - /var/www/homecyclhome/homecyclhome_API/public/uploads:/var/www/html/public/uploads
     healthcheck:
       test: ["CMD-SHELL", "php -v >/dev/null 2>&1 || exit 1"]
       interval: 10s

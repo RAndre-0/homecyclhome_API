@@ -25,4 +25,4 @@ vendor
 
 .env
 .env.*
-public/uploads/
+public/uploads/*
