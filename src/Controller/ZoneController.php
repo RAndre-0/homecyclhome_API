@@ -415,7 +415,7 @@ final class ZoneController extends AbstractController
         $zones = $zoneRepository->findAll();
 
         foreach ($zones as $zone) {
-            if ($zone->containsPoint($lat, $lon)) {
+            if ($zone->containsPoint($lat, $lon) && $zone->getTechnicien() !== null) {
                 return new JsonResponse([
                     "covered" => true,
                     "zone_id" => $zone->getId(),
