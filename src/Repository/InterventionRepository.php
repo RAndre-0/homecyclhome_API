@@ -99,7 +99,8 @@ public function interventionsByTypeLastTwelveMonths(): array
     public function getNextInterventions(int $limit = 10): array
     {
         $conn = $this->getEntityManager()->getConnection();
-        $sql = "
+        $limit = max(1, min(100, $limit));
+        $sql = <<<SQL
             SELECT 
                 i.id AS intervention_id,
                 t.nom AS type_intervention,
@@ -113,10 +114,11 @@ public function interventionsByTypeLastTwelveMonths(): array
             JOIN type_intervention t ON i.type_intervention_id = t.id
             WHERE i.client_id IS NOT NULL
             ORDER BY i.debut ASC
-            LIMIT $limit;
-        ";
+            LIMIT :limit
+        SQL;
     
         $stmt = $conn->prepare($sql);
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
         $result = $stmt->executeQuery();
         return $result->fetchAllAssociative();
     }
