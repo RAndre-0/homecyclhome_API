@@ -110,7 +110,7 @@ public function interventionsByTypeLastTwelveMonths(): array
                 i.fin,
                 i.adresse
             FROM intervention i
-            JOIN \"user\" u ON i.technicien_id = u.id
+            JOIN 'user' u ON i.technicien_id = u.id
             JOIN type_intervention t ON i.type_intervention_id = t.id
             WHERE i.client_id IS NOT NULL
             ORDER BY i.debut ASC
