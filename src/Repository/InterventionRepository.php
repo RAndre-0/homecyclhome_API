@@ -122,7 +122,4 @@ public function interventionsByTypeLastTwelveMonths(): array
         $result = $stmt->executeQuery();
         return $result->fetchAllAssociative();
     }
-    
-    
-    
 }

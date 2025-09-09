@@ -445,7 +445,9 @@ class InterventionController extends AbstractController
     )]
     public function editIntervention(Request $request, Intervention $intervention, EntityManagerInterface $em, TagAwareCacheInterface $cache, SerializerInterface $serializer): JsonResponse
     {
-        $interventionModifiee = $serializer->deserialize($request->getContent(), Intervention::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $intervention]);
+        $interventionModifiee = $serializer->deserialize(
+            $request->getContent(), Intervention::class, "json", [AbstractNormalizer::OBJECT_TO_POPULATE => $intervention]
+        );
         $em->persist($interventionModifiee);
         $em->flush();
         $cache->invalidateTags(["interventions_cache"]);
@@ -455,7 +457,6 @@ class InterventionController extends AbstractController
 
     // Permet aux techniciens et aux administrateurs de valider une intervention
     #[Route('/api/interventions/{id}/validate', name: 'validate_intervention', methods: ['POST'])]
-    #[IsGranted("is_granted('ROLE_TECHNICIEN') or is_granted('ROLE_ADMIN')")]
     #[OA\Post(
         summary: "Valider/finaliser une intervention",
         tags: ["Interventions"],
